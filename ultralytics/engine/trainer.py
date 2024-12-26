@@ -6,6 +6,8 @@ Usage:
     $ yolo mode=train model=yolov8n.pt data=coco8.yaml imgsz=640 epochs=100 batch=16
 """
 
+from ultralytics.models.xiilab.xiilab import Generator
+
 import gc
 import math
 import os
@@ -580,6 +582,7 @@ class BaseTrainer:
         elif isinstance(self.args.pretrained, (str, Path)):
             weights, _ = attempt_load_one_weight(self.args.pretrained)
         self.model = self.get_model(cfg=cfg, weights=weights, verbose=RANK == -1)  # calls Model(cfg, weights)
+      
         return ckpt
 
     def optimizer_step(self):
