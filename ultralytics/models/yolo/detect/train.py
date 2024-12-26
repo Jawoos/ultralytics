@@ -15,6 +15,8 @@ from ultralytics.utils import LOGGER, RANK
 from ultralytics.utils.plotting import plot_images, plot_labels, plot_results
 from ultralytics.utils.torch_utils import de_parallel, torch_distributed_zero_first
 
+from ultralytics.models.xiilab.xiilab import Generator, XiilabModel
+
 
 class DetectionTrainer(BaseTrainer):
     """
@@ -85,9 +87,11 @@ class DetectionTrainer(BaseTrainer):
 
     def get_model(self, cfg=None, weights=None, verbose=True):
         """Return a YOLO detection model."""
-        model = DetectionModel(cfg, nc=self.data["nc"], verbose=verbose and RANK == -1)
+        # model = DetectionModel(cfg, nc=self.data["nc"], verbose=verbose and RANK == -1)
+        model = XiilabModel(cfg, nc=self.data["nc"], verbose=verbose and RANK == -1)
         if weights:
             model.load(weights)
+
         return model
 
     def get_validator(self):

@@ -798,9 +798,10 @@ class Model(nn.Module):
             args["resume"] = self.ckpt_path
 
         self.trainer = (trainer or self._smart_load("trainer"))(overrides=args, _callbacks=self.callbacks)
-        if not args.get("resume"):  # manually set model only if not resuming
-            self.trainer.model = self.trainer.get_model(weights=self.model if self.ckpt else None, cfg=self.model.yaml)
-            self.model = self.trainer.model
+
+        # if not args.get("resume"):  # manually set model only if not resuming
+        #     self.trainer.model = self.trainer.get_model(weights=self.model if self.ckpt else None, cfg=self.model.yaml)
+        #     self.model = self.trainer.model
 
         self.trainer.hub_session = self.session  # attach optional HUB session
         self.trainer.train()
@@ -912,6 +913,15 @@ class Model(nn.Module):
             self.predictor = self._smart_load("predictor")(overrides=self.overrides, _callbacks=self.callbacks)
             self.predictor.setup_model(model=self.model, verbose=False)
         return self.predictor.model.names
+
+    # @names.setter
+    # def names(self, value: Dict[int, str]):
+    #     if not isinstance(value, dict):
+    #         raise ValueError("names must be a dictionary mapping class indices to class names.")
+    #     if hasattr(self.model, "names"):
+    #         self.model.names = value
+    #     else:
+    #         raise AttributeError("Underlying model does not support setting 'names'.")
 
     @property
     def device(self) -> torch.device:
@@ -1100,7 +1110,7 @@ class Model(nn.Module):
                 emojis(f"WARNING ⚠️ '{name}' model does not support '{mode}' mode for '{self.task}' task yet.")
             ) from e
 
-    @property
+    # @property
     def task_map(self) -> dict:
         """
         Provides a mapping from model tasks to corresponding classes for different modes.
@@ -1130,6 +1140,44 @@ class Model(nn.Module):
             description of the expected behavior and structure.
         """
         raise NotImplementedError("Please provide task map for your model!")
+
+    # @property
+    # def task_map(self) -> dict:
+    #     """
+    #     작업(task)과 모드(model, trainer, validator, predictor)의 매핑을 제공합니다.
+
+    #     각 작업(task)에 대해 모델, 트레이너, 검증기 및 예측기에 대한 매핑을 정의합니다.
+    #     """
+    #     # task_map은 각 작업(task)에 대한 키와 동작 객체를 정의합니다.
+    #     if not hasattr(self, "trainer"):
+    #         raise AttributeError("Trainer is not properly initialized.")
+    #     if not hasattr(self, "val"):
+    #         raise AttributeError("Validator is not properly initialized.")
+    #     if not hasattr(self, "predictor"):
+    #         raise AttributeError("Predictor is not properly initialized.")
+
+    #     return {
+    #         "detect": {
+    #             "model": self.model,  # detection 모델
+    #             "trainer": self.trainer,  # detection 트레이너
+    #             "validator": self.val,  # 검증
+    #             "predictor": self.predictor  # 예측기
+    #         },
+    #         # 필요한 경우 classify와 segment도 정의
+    #         "classify": {
+    #             "model": None,
+    #             "trainer": None,
+    #             "validator": None,
+    #             "predictor": None
+    #         },
+    #         "segment": {
+    #             "model": None,
+    #             "trainer": None,
+    #             "validator": None,
+    #             "predictor": None
+    #         }
+    #     }
+
 
     def eval(self):
         """
