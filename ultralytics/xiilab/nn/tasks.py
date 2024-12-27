@@ -64,7 +64,7 @@ from ultralytics.xiilab.nn.modules import (
 )
 from ultralytics.utils import DEFAULT_CFG_DICT, DEFAULT_CFG_KEYS, LOGGER, colorstr, emojis, yaml_load
 from ultralytics.utils.checks import check_requirements, check_suffix, check_yaml
-from ultralytics.utils.loss import (
+from ultralytics.xiilab.utils.loss import (
     E2EDetectLoss,
     v8ClassificationLoss,
     v8DetectionLoss,
@@ -290,9 +290,9 @@ class BaseModel(nn.Module):
                 self.criterion = self.init_criterion()
         if preds == None:
             # preds = self.forward(batch["img"], xii=xii) if preds is None else preds
-
+            
             # without mask
-            ori_preds, masked_image = self.forward(batch["img"], xii=True)
+            ori_preds, masked_image = self.forward(batch["img"], xii=True, target=self.criterion.get_bbox(batch))
 
             # with mask
             mask_preds = self.forward(masked_image, xii=False)

@@ -8,8 +8,8 @@ from ultralytics.xiilab.model import XiiYOLO
 
 def main(args):
     # Load a model
-    model = YOLO("yolo11x.pt")
-    # model = XiiYOLO("yolo11x.pt")
+    # model = YOLO("yolo11x.pt")
+    model = XiiYOLO("yolo11x.pt")
 
     # Train the model
     train_results = model.train(
@@ -22,6 +22,8 @@ def main(args):
         batch=4
     )
 
+    # model = XiiYOLO("/DATA_17/pjw/workspace/ultralytics/runs/detect/train/weights/best.pt")
+
     # Evaluate model performance on the validation set
     metrics = model.val()
 
@@ -32,7 +34,8 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--epoch', default=100, help='Epoch for Train')
-    parser.add_argument('--gpu_num', default=3, help='Select GPU for train')
+    parser.add_argument('--gpu_num', default='3', type=str, nargs='+', help='0 1 ...')  # 공백으로 리스트 구현
+    parser.add_argument('--batch_size', default=1, help='Batch Size for Train')
     parser.add_argument('--data_path', default='coco8.yaml', help='Data for train')
     args = parser.parse_args()
 
