@@ -295,7 +295,7 @@ class XiilabModel(DetectionModel):
 
         self.cfg = cfg
         self.is_split = False
-        self.gen = Generator(768, 768, 768)   # x
+        self.gen = Generator(768, 768, 768, target_size=(640, 640))   # x
         # self.gen = Generator(128, 128, 256)     # nano
 
     def load(self, weights, verbose=True):
