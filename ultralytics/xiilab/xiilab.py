@@ -4,9 +4,10 @@ import torch.nn.functional as F
 import time
 import random 
 import numpy as np 
+from pathlib import Path
 
-from ultralytics.engine.model import Model
-from ultralytics.nn.tasks import DetectionModel
+from ultralytics.xiilab.engine.model import Model
+from ultralytics.xiilab.nn.tasks import DetectionModel
 
 from ultralytics.utils import DEFAULT_CFG_DICT, DEFAULT_CFG_KEYS, LOGGER
 from ultralytics.utils.torch_utils import (
@@ -136,9 +137,9 @@ class Generator(nn.Module):
               
         
         # Self-Attention 레이어
-        self.attention1 = SelfAttention(512, num_heads=num_heads)
-        self.attention2 = SelfAttention(1024, num_heads=num_heads)
-        self.attention3 = SelfAttention(2048, num_heads=num_heads)
+        self.attention1 = SelfAttention(input_channels1, num_heads=num_heads)
+        self.attention2 = SelfAttention(input_channels2, num_heads=num_heads)
+        self.attention3 = SelfAttention(input_channels3, num_heads=num_heads)
         
         # 채널 정렬 레이어
         self.align1_3 = nn.Conv2d(int(unified_channels/2), int(unified_channels/4), kernel_size=1)
@@ -237,119 +238,6 @@ class Generator(nn.Module):
         return mask
   
  
- 
-
-# @register
-class RTDETR(nn.Module):
-    __inject__ = ['backbone', 'encoder', 'decoder', ]
-
-    def __init__(self, backbone: nn.Module, encoder, decoder, multi_scale=None):
-        super().__init__()
-        self.backbone = backbone
-        self.decoder = decoder
-        self.encoder = encoder
-        self.multi_scale = multi_scale
-        
-        ### 어텐션 맵 기반의 마스크 생성 모듈
-        self.gen = Generator(512,1024,2048)        
-    
-    def forward(self, x, targets=None, option=True):
-
-        if self.multi_scale and self.training and option:
-            sz = np.random.choice(self.multi_scale)
-            x = F.interpolate(x, size=[sz, sz])
-            
-        ## 백본에 이미지를 넣어서 Feature Map 추출
-        backbone_x_all = self.backbone(x)  
-        ## Feature Map Tensor Shape : [torch.Size([2, 256, 144, 144]), torch.Size([2, 512, 72, 72]), torch.Size([2, 1024, 36, 36]), torch.Size([2, 2048, 18, 18])]
-
-        ## 여기서는 4개 추출 후 2~4번 Feature Map 사용
-        backbone_x = backbone_x_all[1:] 
-
-
-        ## Feature Map 3개 준비
-        feature_map1 = backbone_x[0]
-        feature_map2 = backbone_x[1]
-        feature_map3 = backbone_x[2]
-        
-        ## option값이 True일때만 마스크 이미지를 구성
-        if option :            
-            ## Feature Map을 통해서 마스크를 생성
-            mask = self.gen(feature_map1, feature_map2, feature_map3,targets)
-            ## 해상도 맞춤
-            upscaled_mask = F.interpolate(mask, size=x.shape[2:], mode='bilinear', align_corners=False)
-            ## 마스크값이 0.5이상일때만 활성화하고 나머지는 0으로. => 전경배경 분리된 이미지를 생성
-            masked_image = x * (upscaled_mask >= 0.5).float()                        
-        else:
-            masked_image = None        
-        
-        # encoder
-        neck_x = self.encoder(backbone_x)                
-        
-        # decoder
-        x = self.decoder(neck_x, targets)
-
-        ## 디코더 결과와, 마스크 이미지 반환
-        return x, masked_image
-
-    
-
-
-# # Define backbone
-# class Backbone(nn.Module):
-#     def __init__(self, layers):
-#         super(Backbone, self).__init__()
-#         self.layers = nn.Sequential(*layers)
-
-#     def forward(self, x):
-#         return self.layers(x)
-
-# # Define neck
-# class Neck(nn.Module):
-#     def __init__(self, layers):
-#         super(Neck, self).__init__()
-#         self.layers = nn.Sequential(*layers)
-
-#     def forward(self, x):
-#         return self.layers(x)
-
-# # Define head
-# class Head(nn.Module):
-#     def __init__(self, layers):
-#         super(Head, self).__init__()
-#         self.layers = nn.Sequential(*layers)
-
-#     def forward(self, x):
-#         return self.layers(x)
-
-# # Define full YOLO model
-# class DevidedModel(DetectionModel):
-#     def __init__(self, backbone, neck, head):
-#         super().__init__()
-#         self.backbone = backbone
-#         self.neck = neck
-#         self.head = head
-
-#         self._layers = []  # _layers 속성 추가
-
-#         ### 어텐션 맵 기반의 마스크 생성 모듈
-#         self.gen = Generator(512,1024,2048)   
-
-#     def forward(self, x):
-#         x = self.backbone(x)
-#         x = self.neck(x)
-#         x = self.head(x)
-#         return x
-
-#     def __getitem__(self, idx):
-#         """
-#         인덱스 접근을 지원하여 기존 YOLO 모델과의 호환성 유지.
-#         """
-#         if idx >= len(self._layers):
-#             raise IndexError(f"Invalid index {idx}. DevidedModel supports 0 to {len(self._layers) - 1}.")
-#         return self._layers[idx]
-
-
 # Backbone, Neck, Head를 나누기 위한 클래스 정의
 class Backbone(nn.Module):
     def __init__(self, model, backbone_last_idx):
@@ -407,7 +295,8 @@ class XiilabModel(DetectionModel):
 
         self.cfg = cfg
         self.is_split = False
-        self.gen = Generator(512,1024,2048) 
+        self.gen = Generator(768, 768, 768)   # x
+        # self.gen = Generator(128, 128, 256)     # nano
 
     def load(self, weights, verbose=True):
         """
@@ -429,7 +318,7 @@ class XiilabModel(DetectionModel):
     def split_yolo_model(self):
         self.is_split = True
 
-        backbone_last_idx = 11  # Backbone의 마지막 인덱스
+        backbone_last_idx = 10  # Backbone의 마지막 인덱스
         neck_last_idx = 23  # Neck의 마지막 인덱스
         self.backbone = Backbone(self.model, backbone_last_idx)
         self.neck = Neck(self.model, backbone_last_idx, neck_last_idx)
@@ -439,12 +328,12 @@ class XiilabModel(DetectionModel):
         # model = DevidedModel(backbone, neck, head)
         # model._layers = layers  # _layers 속성 설정
 
-    def forward(self, x, *args, **kwargs):
+    def forward(self, x, xii=False, *args, **kwargs):
         if isinstance(x, dict):  # for cases of training and validating while training.
-            return self.loss(x, *args, **kwargs)
-        return self.predict(x, *args, **kwargs)
+            return self.loss(x, xii=xii, *args, **kwargs)
+        return self.predict(x, xii=xii, *args, **kwargs)
 
-    def predict(self, x, profile=False, visualize=False, augment=False, embed=None):
+    def predict(self, x, profile=False, visualize=False, augment=False, embed=None, xii=False):
         """
         Perform a forward pass through the network.
 
@@ -460,9 +349,9 @@ class XiilabModel(DetectionModel):
         """
         if augment:
             return self._predict_augment(x)
-        return self._predict_once(x, profile, visualize, embed)
+        return self._predict_once(x, profile, visualize, embed, xii=xii)
 
-    def _predict_once(self, x, profile=False, visualize=False, embed=None):
+    def _predict_once(self, x, profile=False, visualize=False, embed=None, xii=False):
         """
         Perform a forward pass through the network.
 
@@ -480,19 +369,35 @@ class XiilabModel(DetectionModel):
         if hasattr(self, "is_split") and self.is_split:
         # if False:
             # Backbone 실행
-            x, y = self.backbone(x)
+            output_x, y = self.backbone(x)
 
-            for idx, y_i in enumerate(y):
-                print(idx, y_i.shape)
+            if xii:
+                # for idx, y_i in enumerate(y):
+                #     print(idx, y_i.shape)
 
-            low_feature = y[4]
-            mid_feature = y[6]
+                low_feature = y[4]
+                mid_feature = y[6]
+                high_feature = y[10]
+
+                # mask = self.gen(low_feature, mid_feature, high_feature, targets)
+                mask = self.gen(low_feature, mid_feature, high_feature, None)
+
+                ## 해상도 맞춤
+                upscaled_mask = F.interpolate(mask, size=x.shape[2:], mode='bilinear', align_corners=False)
+
+                ## 마스크값이 0.5이상일때만 활성화하고 나머지는 0으로. => 전경배경 분리된 이미지를 생성
+                masked_image = x * (upscaled_mask >= 0.5).float()  
 
             # Neck 실행
-            x, y = self.neck(x, y)
+            output_x, y = self.neck(output_x, y)
 
             # Head 실행
-            x = self.head(x, y, visualize=visualize, embed=embed)
+            output_x = self.head(output_x, y, visualize=visualize, embed=embed)
+
+            if xii:
+                return output_x, masked_image
+            else:
+                return output_x
 
         else:
             for m in self.model:
@@ -509,7 +414,7 @@ class XiilabModel(DetectionModel):
                     if m.i == max(embed):
                         return torch.unbind(torch.cat(embeddings, 1), dim=0)
 
-        return x
+            return x
 
     def _predict_augment(self, x):
         """Perform augmentations on input image x and return augmented inference."""
@@ -518,3 +423,54 @@ class XiilabModel(DetectionModel):
             f"Reverting to single-scale prediction."
         )
         return self._predict_once(x)
+
+
+class XiiYOLO(Model):
+    """YOLO (You Only Look Once) object detection model."""
+
+    def __init__(self, model="yolo11n.pt", task=None, verbose=False):
+        """Initialize YOLO model, switching to YOLOWorld if model filename contains '-world'."""
+        path = Path(model)
+        if "-world" in path.stem and path.suffix in {".pt", ".yaml", ".yml"}:  # if YOLOWorld PyTorch model
+            new_instance = YOLOWorld(path, verbose=verbose)
+            self.__class__ = type(new_instance)
+            self.__dict__ = new_instance.__dict__
+        else:
+            # Continue with default YOLO initialization
+            super().__init__(model=model, task=task, verbose=verbose)
+
+    @property
+    def task_map(self):
+        """Map head to model, trainer, validator, and predictor classes."""
+        return {
+            "classify": {
+                "model": ClassificationModel,
+                "trainer": yolo.classify.ClassificationTrainer,
+                "validator": yolo.classify.ClassificationValidator,
+                "predictor": yolo.classify.ClassificationPredictor,
+            },
+            "detect": {
+                "model": DetectionModel,
+                "trainer": yolo.detect.DetectionTrainer,
+                "validator": yolo.detect.DetectionValidator,
+                "predictor": yolo.detect.DetectionPredictor,
+            },
+            "segment": {
+                "model": SegmentationModel,
+                "trainer": yolo.segment.SegmentationTrainer,
+                "validator": yolo.segment.SegmentationValidator,
+                "predictor": yolo.segment.SegmentationPredictor,
+            },
+            "pose": {
+                "model": PoseModel,
+                "trainer": yolo.pose.PoseTrainer,
+                "validator": yolo.pose.PoseValidator,
+                "predictor": yolo.pose.PosePredictor,
+            },
+            "obb": {
+                "model": OBBModel,
+                "trainer": yolo.obb.OBBTrainer,
+                "validator": yolo.obb.OBBValidator,
+                "predictor": yolo.obb.OBBPredictor,
+            },
+        }

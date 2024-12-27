@@ -8,8 +8,8 @@ from ultralytics.xiilab.model import XiiYOLO
 
 def main(args):
     # Load a model
-    # model = YOLO("yolo11x.pt")
-    model = XiiYOLO("yolo11x.pt")
+    model = YOLO("yolo11x.pt")
+    # model = XiiYOLO("yolo11x.pt")
 
     # Train the model
     train_results = model.train(

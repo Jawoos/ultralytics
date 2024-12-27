@@ -8,8 +8,8 @@ import numpy as np
 import torch.nn as nn
 
 from ultralytics.data import build_dataloader, build_yolo_dataset
-from ultralytics.engine.trainer import BaseTrainer
-from ultralytics.models import yolo
+from ultralytics.xiilab.engine.trainer import BaseTrainer
+from ultralytics.xiilab.models import yolo
 from ultralytics.nn.tasks import DetectionModel
 from ultralytics.utils import LOGGER, RANK
 from ultralytics.utils.plotting import plot_images, plot_labels, plot_results
@@ -87,8 +87,8 @@ class DetectionTrainer(BaseTrainer):
 
     def get_model(self, cfg=None, weights=None, verbose=True):
         """Return a YOLO detection model."""
-        model = DetectionModel(cfg, nc=self.data["nc"], verbose=verbose and RANK == -1)
-        # model = XiilabModel(cfg, nc=self.data["nc"], verbose=verbose and RANK == -1)
+        # model = DetectionModel(cfg, nc=self.data["nc"], verbose=verbose and RANK == -1)
+        model = XiilabModel(cfg, nc=self.data["nc"], verbose=verbose and RANK == -1)
         if weights:
             model.load(weights)
 
