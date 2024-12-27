@@ -4,6 +4,7 @@ import torch.nn.functional as F
 import time
 import random 
 import numpy as np 
+from PIL import Image
 from pathlib import Path
 
 from ultralytics.xiilab.engine.model import Model
@@ -201,13 +202,14 @@ class Generator(nn.Module):
         x3 = self.relu(x3)
         
         ## 바운딩 박스 기반의 가중치 마스크를 활용(정답지 가져오기 어려우면 배제)
-        if targets != None and random.choice([True, False]):
+        # if targets != None and random.choice([True, False]):
+        if targets != None:
             g_batch_size = x1.shape[0]
             g_height = self.target_size[1]
             g_width = self.target_size[0]
             g_bboxes = list()
             for t in targets:
-                g_bboxes.append(t["boxes"])        
+                g_bboxes.append(t)        
             g_original_size = self.target_size
             weight_mask = generate_overlap_bbox_mask(g_batch_size, g_height, g_width, g_bboxes, g_original_size)
 
@@ -295,7 +297,7 @@ class XiilabModel(DetectionModel):
 
         self.cfg = cfg
         self.is_split = False
-        self.gen = Generator(768, 768, 768, target_size=(640, 640))   # x
+        self.gen = Generator(768, 768, 768, target_size=(320, 320))   # x
         # self.gen = Generator(128, 128, 256)     # nano
 
     def load(self, weights, verbose=True):
@@ -328,12 +330,12 @@ class XiilabModel(DetectionModel):
         # model = DevidedModel(backbone, neck, head)
         # model._layers = layers  # _layers 속성 설정
 
-    def forward(self, x, xii=False, *args, **kwargs):
+    def forward(self, x, xii=False, target=None, *args, **kwargs):
         if isinstance(x, dict):  # for cases of training and validating while training.
             return self.loss(x, xii=xii, *args, **kwargs)
-        return self.predict(x, xii=xii, *args, **kwargs)
+        return self.predict(x, xii=xii, target=target, *args, **kwargs)
 
-    def predict(self, x, profile=False, visualize=False, augment=False, embed=None, xii=False):
+    def predict(self, x, profile=False, visualize=False, augment=False, embed=None, xii=False, target=None):
         """
         Perform a forward pass through the network.
 
@@ -349,9 +351,9 @@ class XiilabModel(DetectionModel):
         """
         if augment:
             return self._predict_augment(x)
-        return self._predict_once(x, profile, visualize, embed, xii=xii)
+        return self._predict_once(x, profile, visualize, embed, xii=xii, target=target)
 
-    def _predict_once(self, x, profile=False, visualize=False, embed=None, xii=False):
+    def _predict_once(self, x, profile=False, visualize=False, embed=None, xii=False, target=None):
         """
         Perform a forward pass through the network.
 
@@ -371,16 +373,16 @@ class XiilabModel(DetectionModel):
             # Backbone 실행
             output_x, y = self.backbone(x)
 
-            if xii:
-                # for idx, y_i in enumerate(y):
-                #     print(idx, y_i.shape)
+            if xii or not self.training:
+            # for idx, y_i in enumerate(y):
+            #     print(idx, y_i.shape)
 
                 low_feature = y[4]
                 mid_feature = y[6]
                 high_feature = y[10]
 
-                # mask = self.gen(low_feature, mid_feature, high_feature, targets)
-                mask = self.gen(low_feature, mid_feature, high_feature, None)
+                mask = self.gen(low_feature, mid_feature, high_feature, target)
+                # mask = self.gen(low_feature, mid_feature, high_feature, None)
 
                 ## 해상도 맞춤
                 upscaled_mask = F.interpolate(mask, size=x.shape[2:], mode='bilinear', align_corners=False)
@@ -393,6 +395,44 @@ class XiilabModel(DetectionModel):
 
             # Head 실행
             output_x = self.head(output_x, y, visualize=visualize, embed=embed)
+
+            if not self.training:
+                # 1. 경로 파싱
+                try:
+                    base_dir = os.path.dirname(self.pt_path)  # best.pt 파일의 디렉토리
+                except AttributeError:
+                    base_dir = self.args.save_dir
+                save_dir = os.path.join(base_dir, '../mask')  # mask 디렉토리 경로 생성
+                save_dir = os.path.abspath(save_dir)  # 절대 경로로 변환
+
+                # 2. 저장 디렉토리 생성
+                os.makedirs(save_dir, exist_ok=True)
+
+                # 3. 저장 디렉토리에 존재하는 파일 이름 확인
+                existing_files = [f for f in os.listdir(save_dir) if f.endswith('.png')]
+                max_index = 0
+                for file in existing_files:
+                    try:
+                        index = int(os.path.splitext(file)[0])  # 파일명에서 숫자 추출
+                        max_index = max(max_index, index)
+                    except ValueError:
+                        continue  # 숫자가 아닌 파일은 무시
+                for idx in range(masked_image.shape[0]):
+                    # 4. 새 파일 이름 결정
+                    new_file_name = f"{max_index + 1 + idx}.png"
+                    new_file_path = os.path.join(save_dir, new_file_name)
+
+                    # 5. 이미지 저장
+                    # 텐서를 CPU로 이동 및 값 범위 변환
+                    tensor_image = masked_image[idx].detach().cpu()  # CUDA에서 CPU로 이동
+                    tensor_image = (tensor_image - tensor_image.min()) / (tensor_image.max() - tensor_image.min())  # 값 범위 [0, 1]
+                    tensor_image = (tensor_image * 255).byte()  # 값 범위 [0, 255]
+                    
+                    # 텐서를 NumPy로 변환 (HWC 형태로 변환)
+                    numpy_image = tensor_image.squeeze().permute(1, 2, 0).numpy()  # CHW -> HWC
+
+                    img = Image.fromarray(numpy_image)
+                    img.save(new_file_path)
 
             if xii:
                 return output_x, masked_image

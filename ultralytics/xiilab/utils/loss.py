@@ -215,7 +215,26 @@ class v8DetectionLoss:
         _, gt_bboxes = targets.split((1, 4), 2)  # cls, xyxy
         # mask_gt = gt_bboxes.sum(2, keepdim=True).gt_(0.0)
 
-        return gt_bboxes
+        padding_value = 0.0
+        output = torch.full_like(gt_bboxes, padding_value)
+
+        for batch_idx, batch_bboxes in enumerate(gt_bboxes):
+            # Mask to filter valid boxes (non-zero)
+            valid_mask = ~(batch_bboxes == padding_value).all(dim=-1)
+            valid_boxes = batch_bboxes[valid_mask]  # Filter valid boxes
+
+            if valid_boxes.numel() > 0:
+                # Compute (cx, cy, w, h)
+                x1, y1, x2, y2 = valid_boxes[:, 0], valid_boxes[:, 1], valid_boxes[:, 2], valid_boxes[:, 3]
+                cx = (x1 + x2) / 2
+                cy = (y1 + y2) / 2
+                w = x2 - x1
+                h = y2 - y1
+
+                # Update the output tensor for valid boxes
+                output[batch_idx, valid_mask] = torch.stack([cx, cy, w, h], dim=-1)
+
+        return output
 
     def __call__(self, preds, batch):
         """Calculate the sum of the loss for box, cls and dfl multiplied by batch size."""
