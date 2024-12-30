@@ -756,3 +756,25 @@ class E2EDetectLoss:
         one2one = preds["one2one"]
         loss_one2one = self.one2one(one2one, batch)
         return loss_one2many[0] + loss_one2one[0], loss_one2many[1] + loss_one2one[1]
+
+
+class FeatureMapLoss(nn.Module):
+    def __init__(self, lambda_mse=1.0, lambda_cos=1.0):
+        super(FeatureMapLoss, self).__init__()
+        self.mse_loss = nn.MSELoss()
+        self.lambda_mse = lambda_mse
+        self.lambda_cos = lambda_cos
+
+    def cosine_similarity_loss(self, f1, f2):
+        f1_flat = f1.view(f1.size(0), -1)  # Flatten
+        f2_flat = f2.view(f2.size(0), -1)
+        cos_sim = nn.functional.cosine_similarity(f1_flat, f2_flat, dim=1)
+        return 1 - cos_sim.mean()  # 코사인 유사도를 손실로 반환
+
+    def forward(self, features, masked_features):
+        loss = 0.0
+        for f, f_masked in zip(features, masked_features):
+            mse = self.mse_loss(f, f_masked)
+            cos = self.cosine_similarity_loss(f, f_masked)
+            loss += self.lambda_mse * mse + self.lambda_cos * cos
+        return loss
