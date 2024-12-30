@@ -341,7 +341,7 @@ class XiilabModel(DetectionModel):
         self.is_split = True
 
         backbone_last_idx = 10  # Backbone의 마지막 인덱스
-        neck_last_idx = 23  # Neck의 마지막 인덱스
+        neck_last_idx = 22  # Neck의 마지막 인덱스
         self.backbone = Backbone(self.model, backbone_last_idx)
         self.neck = Neck(self.model, backbone_last_idx, neck_last_idx)
         self.head = Head(self.model, neck_last_idx)

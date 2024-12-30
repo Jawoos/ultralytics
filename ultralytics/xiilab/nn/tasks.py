@@ -303,7 +303,7 @@ class BaseModel(nn.Module):
             # print(f"feature_mask: {[i.shape for i in feature_mask]}")
             # mask_preds = self.forward(masked_image, xii=False)
 
-            ori_loss = self.criterion(ori_preds, batch)
+            ori_loss = self.criterion(ori_preds, batch) # ([4, 144, 40, 40]), ([4, 144, 20, 20]), ([4, 144, 10, 10])
             mask_loss = self.criterion(mask_preds, batch)
             feat_loss = self.feat_criterion(feature_ori, feature_mask)
             
@@ -312,7 +312,7 @@ class BaseModel(nn.Module):
 
         else:
             # original code
-            return self.criterion(preds, batch)
+            return self.criterion(preds, batch) # ([4, 144, 40, 40]), ([4, 144, 20, 20]), ([4, 144, 10, 10])
 
     def init_criterion(self):
         """Initialize the loss criterion for the BaseModel."""

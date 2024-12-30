@@ -25,7 +25,7 @@ def main(args):
         # data="/DATA_17/DATASET/Competition_Dataset/CytologIA/images/temp/data.yaml",
         data=args.data_path,
         epochs=int(args.epoch),  # number of training epochs
-        imgsz=320,  # training image size
+        imgsz=640,  # training image size
         device=args.gpu_num,  # device to run on, i.e. device=0 or device=0,1,2,3 or device=cpu
         batch=4
     )
