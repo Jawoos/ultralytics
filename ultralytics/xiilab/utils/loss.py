@@ -240,10 +240,11 @@ class v8DetectionLoss:
         """Calculate the sum of the loss for box, cls and dfl multiplied by batch size."""
         loss = torch.zeros(3, device=self.device)  # box, cls, dfl
         feats = preds[1] if isinstance(preds, tuple) else preds
+        # print(f"feats: {[i.shape for i in feats]}")
+        # print(f"no : {self.no}")
         pred_distri, pred_scores = torch.cat([xi.view(feats[0].shape[0], self.no, -1) for xi in feats], 2).split(
-            (self.reg_max * 4, self.nc), 1
-        )
-
+            (self.reg_max * 4, self.nc), 1)
+        
         pred_scores = pred_scores.permute(0, 2, 1).contiguous()
         pred_distri = pred_distri.permute(0, 2, 1).contiguous()
 
@@ -775,3 +776,96 @@ class E2EDetectLoss:
         one2one = preds["one2one"]
         loss_one2one = self.one2one(one2one, batch)
         return loss_one2many[0] + loss_one2one[0], loss_one2many[1] + loss_one2one[1]
+
+class FeatureMapLoss(nn.Module):
+    def __init__(self, lambda_mse=1.0, lambda_cos=1.0):
+        super(FeatureMapLoss, self).__init__()
+        self.mse_loss = nn.MSELoss(reduction='mean')  # 평균 MSE 손실 계산
+        self.lambda_mse = lambda_mse
+        self.lambda_cos = lambda_cos
+
+    def cosine_similarity_loss(self, f1, f2):
+        """
+        코사인 유사도를 기반으로 손실 계산
+        Args:
+            f1 (torch.Tensor): 원본 Feature Map.
+            f2 (torch.Tensor): Masked Feature Map.
+
+        Returns:
+            torch.Tensor: 코사인 유사도 손실.
+        """
+        f1_flat = f1.view(f1.size(0), -1)  # Flatten per batch
+        f2_flat = f2.view(f2.size(0), -1)
+        cos_sim = nn.functional.cosine_similarity(f1_flat, f2_flat, dim=1)
+        return 1 - cos_sim.mean()  # 코사인 유사도를 손실로 반환
+
+    def forward(self, features, masked_features):
+        """
+        Feature Map 손실 계산
+
+        Args:
+            features (list[list[torch.Tensor]]): 원본 Feature Maps (각각 [[B, C, H, W], ...]).
+            masked_features (list[list[torch.Tensor]]): Masked Feature Maps (각각 [[B, C, H, W], ...]).
+
+        Returns:
+            torch.Tensor: Feature Map 손실 값.
+        """
+        loss_list = []
+        loss = 0.0
+        for feature_group, masked_feature_group in zip(features, masked_features):
+            for f, f_masked in zip(feature_group, masked_feature_group):
+                # 배치별로 MSE 손실 계산
+                mse = self.mse_loss(f, f_masked)  # 배치 평균 MSE 계산
+                cos = self.cosine_similarity_loss(f, f_masked)  # 배치 평균 코사인 유사도 계산
+                loss += self.lambda_mse * mse + self.lambda_cos * cos
+                # loss_list.append()
+                
+        # return loss.sum() * batch_size, loss.detach()  # loss(box, cls, dfl)
+        return loss
+
+# class FeatureMapLoss(nn.Module):
+#     def __init__(self, lambda_mse=1.0, lambda_cos=1.0):
+#         super(FeatureMapLoss, self).__init__()
+#         self.mse_loss = nn.MSELoss(reduction='mean')  # 평균 MSE 손실 계산
+#         self.lambda_mse = lambda_mse
+#         self.lambda_cos = lambda_cos
+
+#     def cosine_similarity_loss(self, f1, f2):
+#         """
+#         코사인 유사도를 기반으로 손실 계산
+#         Args:
+#             f1 (torch.Tensor): 원본 Feature Map.
+#             f2 (torch.Tensor): Masked Feature Map.
+
+#         Returns:
+#             torch.Tensor: 코사인 유사도 손실.
+#         """
+#         f1_flat = f1.view(f1.size(0), -1)  # Flatten per batch
+#         f2_flat = f2.view(f2.size(0), -1)
+#         cos_sim = nn.functional.cosine_similarity(f1_flat, f2_flat, dim=1)
+#         return 1 - cos_sim.mean()  # 코사인 유사도를 손실로 반환
+
+#     def forward(self, features, masked_features):
+#         """
+#         Feature Map 손실 계산
+
+#         Args:
+#             features (list[list[torch.Tensor]]): 원본 Feature Maps (각각 [[B, C, H, W], ...]).
+#             masked_features (list[list[torch.Tensor]]): Masked Feature Maps (각각 [[B, C, H, W], ...]).
+
+#         Returns:
+#             tuple: (총 손실 값, 개별 손실 값 리스트)
+#         """
+#         loss = 0.0
+#         batch_losses = []
+
+#         for feature_group, masked_feature_group in zip(features, masked_features):
+#             mse = self.mse_loss(feature_group, masked_feature_group)  
+#             cos = self.cosine_similarity_loss(feature_group, masked_feature_group)  
+#             batch_loss = self.lambda_mse * mse + self.lambda_cos * cos
+#             batch_losses.append(batch_loss)
+#             loss += batch_loss
+
+#         batch_losses = torch.stack(batch_losses)
+#         batch_size = features[0][0].size(0) 
+#         return loss.sum() * batch_size, batch_losses.detach()
