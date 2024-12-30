@@ -177,25 +177,15 @@ class Generator(nn.Module):
         Returns:
             torch.Tensor: 배치 마스크 텐서. (B, 1, H, W)                  
         """       
-        print("Input x1 shape:", x1.shape)
-        print("Input x2 shape:", x2.shape)
-        print("Input x3 shape:", x3.shape)
-
         x1 = self.attention1(x1)
         x2 = self.attention2(x2)
         x3 = self.attention3(x3)
-        print("After attention1:", x1.shape)
-        print("After attention2:", x2.shape)
-        print("After attention3:", x3.shape)      
+
         
         # 해상도 정렬
         x1 = self.resize1(x1)
         x2 = self.resize2(x2)
         x3 = self.resize3(x3)        
-        
-        print("After resize1:", x1.shape)
-        print("After resize2:", x2.shape)
-        print("After resize3:", x3.shape)
 
         
         # 채널 정렬
@@ -213,10 +203,7 @@ class Generator(nn.Module):
         x2 = self.relu(x2)
         x3 = self.align3_2(x3)     
         x3 = self.relu(x3)
-        
-        print("After align1_1:", x1.shape)
-        print("After align2_1:", x2.shape)
-        print("After align3_1:", x3.shape)        
+              
         ## 바운딩 박스 기반의 가중치 마스크를 활용(정답지 가져오기 어려우면 배제)
         # if targets != None and random.choice([True, False]):
         if targets != None:
@@ -236,10 +223,7 @@ class Generator(nn.Module):
         # 채널 정렬
         attn_out1 = self.align1_3(x1)
         attn_out2 = self.align2_3(x2)
-        attn_out3 = self.align3_3(x3)     
-        print("After attn_out1:", attn_out1.shape)
-        print("After attn_out1:", attn_out1.shape)
-        print("After attn_out1:", attn_out1.shape)           
+        attn_out3 = self.align3_3(x3)           
         
         
         # Residual 연결        
@@ -255,7 +239,6 @@ class Generator(nn.Module):
         
         # 최종 마스크 생성
         mask = self.activation(self.final_conv(refined))
-        print("Output mask shape:", mask.shape)
         return mask
   
  
@@ -389,7 +372,7 @@ class XiilabModel(DetectionModel):
             (torch.Tensor): The last output of the model.
         """
         y, dt, embeddings = [], [], []  # outputs
-        backbone_x = []
+        # backbone_x = []
 
         if hasattr(self, "is_split") and self.is_split:
         # if False:
@@ -403,15 +386,17 @@ class XiilabModel(DetectionModel):
                 high_feature = y[10]
 
                 mask = self.gen(low_feature, mid_feature, high_feature, target)
-                backbone_x.extend([y[4],y[6],y[10]])
+                # backbone_x.extend([y[4],y[6],y[10]])
 
                 ## 해상도 맞춤
                 upscaled_mask = F.interpolate(mask, size=x.shape[2:], mode='bilinear', align_corners=False)
 
                 ## 마스크값이 0.5이상일때만 활성화하고 나머지는 0으로. => 전경배경 분리된 이미지를 생성
                 masked_image = x * (upscaled_mask >= 0.5).float()  
-            else:
-                backbone_x.extend([y[4],y[6],y[10]])
+            elif self.training:
+                low_feature = y[4]
+                mid_feature = y[6]
+                high_feature = y[10]
             # Neck 실행
             output_x, y = self.neck(output_x, y)
 
@@ -455,12 +440,17 @@ class XiilabModel(DetectionModel):
 
                     img = Image.fromarray(numpy_image)
                     img.save(new_file_path)
-
             if xii:
-                return output_x, masked_image, backbone_x
+                return output_x, masked_image, [low_feature, mid_feature, high_feature]
+            elif self.training:
+                return output_x, [low_feature, mid_feature, high_feature]
             else:
-                return output_x, backbone_x # 2번째
-                # return output_x
+                return output_x
+            # if xii:
+            #     return output_x, masked_image, backbone_x
+            # else:
+            #     return output_x, backbone_x # 2번째
+            #     # return output_x
                 
 
 
