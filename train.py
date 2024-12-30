@@ -11,6 +11,14 @@ def main(args):
     # model = YOLO("yolo11x.pt")
     model = XiiYOLO("yolo11x.pt")
 
+    # Unfeeze Head
+    for name, param in model.model.named_parameters():
+        if name == 'model.23.dfl.conv.weight':
+            param.requires_grad = True
+            print(f"Unfrozen layer: {name}")
+        else:
+            print(f"Layer remains unchanged: {name}")
+
     # Train the model
     train_results = model.train(
         # data="coco8.yaml",  # path to dataset YAML
@@ -34,8 +42,8 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--epoch', default=100, help='Epoch for Train')
-    parser.add_argument('--gpu_num', default='3', type=str, nargs='+', help='0 1 ...')  # 공백으로 리스트 구현
-    parser.add_argument('--batch_size', default=1, help='Batch Size for Train')
+    parser.add_argument('--gpu_num', default='2', type=str, nargs='+', help='0 1 ...')  # 공백으로 리스트 구현
+    parser.add_argument('--batch_size', default=4, help='Batch Size for Train')
     parser.add_argument('--data_path', default='coco8.yaml', help='Data for train')
     args = parser.parse_args()
 

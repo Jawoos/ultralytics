@@ -3,7 +3,8 @@
 import torch
 import torch.nn as nn
 
-from . import LOGGER
+from ultralytics.utils import LOGGER
+# from . import LOGGER
 from .checks import check_version
 from .metrics import bbox_iou, probiou
 from .ops import xywhr2xyxyxyxy

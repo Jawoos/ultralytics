@@ -388,7 +388,10 @@ class XiilabModel(DetectionModel):
                 upscaled_mask = F.interpolate(mask, size=x.shape[2:], mode='bilinear', align_corners=False)
 
                 ## 마스크값이 0.5이상일때만 활성화하고 나머지는 0으로. => 전경배경 분리된 이미지를 생성
-                masked_image = x * (upscaled_mask >= 0.5).float()  
+                if self.training:
+                    masked_image = x * torch.sigmoid(upscaled_mask)  # 연속 값 사용
+                else:
+                    masked_image = x * (torch.sigmoid(upscaled_mask) > 0.5).float()  # 추론 시 이진화
 
             # Neck 실행
             output_x, y = self.neck(output_x, y)
@@ -396,7 +399,8 @@ class XiilabModel(DetectionModel):
             # Head 실행
             output_x = self.head(output_x, y, visualize=visualize, embed=embed)
 
-            if not self.training:
+            if not self.training and hasattr(self, "pt_path"):
+                # self.pt_path
                 # 1. 경로 파싱
                 try:
                     base_dir = os.path.dirname(self.pt_path)  # best.pt 파일의 디렉토리

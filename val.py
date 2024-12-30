@@ -9,10 +9,12 @@ from ultralytics.xiilab.model import XiiYOLO
 def main(args):
     # Load a model
 
-    model = XiiYOLO("/DATA_17/pjw/workspace/ultralytics/runs/detect/train/weights/best.pt")
+    model = XiiYOLO(args.model_path)
 
     # Evaluate model performance on the validation set
-    metrics = model.val()
+    metrics = model.val(
+        device=args.gpu_num,
+        )
 
     # Export the model to ONNX format
     # path = model.export(format="onnx")  # return path to exported model
@@ -20,10 +22,9 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--epoch', default=100, help='Epoch for Train')
-    parser.add_argument('--gpu_num', default='3', type=str, nargs='+', help='0 1 ...')  # 공백으로 리스트 구현
-    parser.add_argument('--batch_size', default=1, help='Batch Size for Train')
-    parser.add_argument('--data_path', default='coco8.yaml', help='Data for train')
+    parser.add_argument('--gpu_num', default='1', type=str, nargs='+', help='0 1 ...')  # 공백으로 리스트 구현
+    parser.add_argument('--model_path', default='/DATA_17/pjw/workspace/ultralytics/runs/detect/train3/weights/best.pt', help='Model for Validataion')
+    parser.add_argument('--data_path', default='/DATA1/temp/data.yaml', help='Data for Validation')
     args = parser.parse_args()
 
     main(args)
