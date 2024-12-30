@@ -71,6 +71,7 @@ from ultralytics.xiilab.utils.loss import (
     v8OBBLoss,
     v8PoseLoss,
     v8SegmentationLoss,
+    FeatureMapLoss,  
 )
 from ultralytics.utils.ops import make_divisible
 from ultralytics.utils.plotting import feature_visualization
@@ -288,20 +289,26 @@ class BaseModel(nn.Module):
         """
         if getattr(self, "criterion", None) is None:
                 self.criterion = self.init_criterion()
+                self.feat_criterion = FeatureMapLoss()
         if preds == None:
             # preds = self.forward(batch["img"], xii=xii) if preds is None else preds
             
             # without mask
-            ori_preds, masked_image = self.forward(batch["img"], xii=True, target=self.criterion.get_bbox(batch))
+            ori_preds, masked_image, feature_ori = self.forward(batch["img"], xii=True, target=self.criterion.get_bbox(batch))
+            # print(f"feature_ori: {[i.shape for i in feature_ori]}")
+            # ori_preds, masked_image = self.forward(batch["img"], xii=True, target=self.criterion.get_bbox(batch))
 
             # with mask
-            mask_preds = self.forward(masked_image, xii=False)
+            mask_preds, feature_mask = self.forward(masked_image, xii=False)
+            # print(f"feature_mask: {[i.shape for i in feature_mask]}")
+            # mask_preds = self.forward(masked_image, xii=False)
 
             ori_loss = self.criterion(ori_preds, batch)
             mask_loss = self.criterion(mask_preds, batch)
-
+            feat_loss = self.feat_criterion(feature_ori, feature_mask)
+            
             # 최종 손실 (스칼라 손실과 텐서 손실을 가중치로 합산)
-            return (ori_loss[0] + mask_loss[0], ori_loss[1] + mask_loss[1])
+            return (ori_loss[0] + mask_loss[0] + feat_loss, ori_loss[1] + mask_loss[1] + feat_loss)
 
         else:
             # original code
