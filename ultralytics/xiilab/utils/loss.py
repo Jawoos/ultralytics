@@ -823,6 +823,20 @@ class FeatureMapLoss(nn.Module):
         # return loss.sum() * batch_size, loss.detach()  # loss(box, cls, dfl)
         return loss
 
+        # loss_list = []
+        # total_loss = 0.0
+        # for feature_group, masked_feature_group in zip(features, masked_features):
+        #     for f, f_masked in zip(feature_group, masked_feature_group):
+        #         # 배치별로 MSE 손실 계산
+        #         mse = self.mse_loss(f, f_masked)  # 배치 평균 MSE 계산
+        #         cos = self.cosine_similarity_loss(f, f_masked)  # 배치 평균 코사인 유사도 계산
+        #         loss = self.lambda_mse * mse + self.lambda_cos * cos  # 가중치 적용
+        #         loss_list.append(loss.detach())  # 개별 손실 값을 리스트에 저장
+        #         total_loss += loss  # 총 손실 값 계산
+
+        # # 총 손실 값과 손실 리스트 반환
+        # return total_loss, torch.tensor(loss_list, device=total_loss.device)
+
 # class FeatureMapLoss(nn.Module):
 #     def __init__(self, lambda_mse=1.0, lambda_cos=1.0):
 #         super(FeatureMapLoss, self).__init__()

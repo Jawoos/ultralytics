@@ -309,6 +309,7 @@ class BaseModel(nn.Module):
             
             # 최종 손실 (스칼라 손실과 텐서 손실을 가중치로 합산)
             return (ori_loss[0] + mask_loss[0] + feat_loss, ori_loss[1] + mask_loss[1] + feat_loss)
+            # return (ori_loss[0] + mask_loss[0] + feat_loss[0], ori_loss[1] + mask_loss[1] + feat_loss[1])
 
         else:
             # original code
