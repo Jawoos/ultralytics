@@ -392,7 +392,12 @@ class XiilabModel(DetectionModel):
                 upscaled_mask = F.interpolate(mask, size=x.shape[2:], mode='bilinear', align_corners=False)
 
                 ## 마스크값이 0.5이상일때만 활성화하고 나머지는 0으로. => 전경배경 분리된 이미지를 생성
-                masked_image = x * (upscaled_mask >= 0.5).float()  
+                ## 마스크값이 0.5이상일때만 활성화하고 나머지는 0으로. => 전경배경 분리된 이미지를 생성
+                if self.training:
+                    masked_image = x * torch.sigmoid(upscaled_mask)  # 연속 값 사용
+                else:
+                    masked_image = x * (torch.sigmoid(upscaled_mask) > 0.5).float()  # 추론 시 이진화
+                    
             elif self.training:
                 low_feature = y[4]
                 mid_feature = y[6]
