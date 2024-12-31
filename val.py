@@ -9,7 +9,7 @@ from ultralytics.xiilab.model import XiiYOLO
 def main(args):
     # Load a model
 
-    model = XiiYOLO("/DATA_17/pjw/workspace/ultralytics/runs/detect/train/weights/best.pt")
+    model = XiiYOLO("/DATA_17/pjw/workspace/ultralytics/runs/detect/train7/weights/best.pt")
 
     # Evaluate model performance on the validation set
     metrics = model.val()
