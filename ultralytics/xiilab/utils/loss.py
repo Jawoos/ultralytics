@@ -867,5 +867,6 @@ class FeatureMapLoss(nn.Module):
             loss += batch_loss
 
         batch_losses = torch.stack(batch_losses)
-        batch_size = features[0][0].size(0) 
+        # batch_size = features[0][0].size(0) 
+        batch_size = len(features)
         return loss.sum() * batch_size, batch_losses.detach()

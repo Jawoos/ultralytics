@@ -28,6 +28,14 @@ import os
 __all__ = ['RTDETR', ]
 import torch
 
+
+import torch.nn as nn
+
+class CustomActivation(nn.Module):
+    def forward(self, x):
+        return torch.where(x > 0.5, x, torch.zeros_like(x))
+
+
 def generate_overlap_bbox_mask(batch_size, height, width, bboxes, original_size, device=torch.device("cuda")):
     """
     Args:
@@ -300,6 +308,8 @@ class XiilabModel(DetectionModel):
         self.cfg = cfg
         self.is_split = False
         self.gen = Generator(768, 768, 768, target_size=(320, 320))   # x
+
+        self.activation = CustomActivation()
         
         # self.gen = Generator(128, 128, 256)     # nano
 
@@ -330,10 +340,6 @@ class XiilabModel(DetectionModel):
         self.head = Head(self.model, neck_last_idx)
         self.channel_reducer = nn.ModuleList([nn.Conv2d(768, 144, kernel_size=1) for _ in range(3)])
                               
-
-        # 새 YOLO 모델 생성
-        # model = DevidedModel(backbone, neck, head)
-        # model._layers = layers  # _layers 속성 설정
 
     def forward(self, x, xii=False, target=None, *args, **kwargs):
         if isinstance(x, dict):  # for cases of training and validating while training.
@@ -393,15 +399,18 @@ class XiilabModel(DetectionModel):
 
                 ## 마스크값이 0.5이상일때만 활성화하고 나머지는 0으로. => 전경배경 분리된 이미지를 생성
                 ## 마스크값이 0.5이상일때만 활성화하고 나머지는 0으로. => 전경배경 분리된 이미지를 생성
-                if self.training:
-                    masked_image = x * torch.sigmoid(upscaled_mask)  # 연속 값 사용
-                else:
-                    masked_image = x * (torch.sigmoid(upscaled_mask) > 0.5).float()  # 추론 시 이진화
-                    
+                # if self.training:
+                #     masked_image = x * torch.sigmoid(upscaled_mask)  # 연속 값 사용
+                # else:
+                #     masked_image = x * (torch.sigmoid(upscaled_mask) > 0.5).float()  # 추론 시 이진화
+
+                masked_image = x * self.activation(upscaled_mask)  # 연속 값 사용
+
             elif self.training:
                 low_feature = y[4]
                 mid_feature = y[6]
                 high_feature = y[10]
+
             # Neck 실행
             output_x, y = self.neck(output_x, y)
 
@@ -429,6 +438,7 @@ class XiilabModel(DetectionModel):
                         max_index = max(max_index, index)
                     except ValueError:
                         continue  # 숫자가 아닌 파일은 무시
+                    
                 for idx in range(masked_image.shape[0]):
                     # 4. 새 파일 이름 결정
                     new_file_name = f"{max_index + 1 + idx}.png"
