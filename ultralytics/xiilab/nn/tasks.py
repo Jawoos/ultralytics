@@ -296,16 +296,22 @@ class BaseModel(nn.Module):
         if preds == None :
             # without mask
             ori_preds, masked_image, feature_ori = self.forward(batch["img"], xii=True, target=self.criterion.get_bbox(batch))
-            print(f"feature_ori : {[i.shape for i in feature_ori]}")
+            # print(f"feature_ori : {[i.shape for i in feature_ori]}")
             # with mask{}
             mask_preds, feature_mask = self.forward(masked_image, xii=False)
-            print(f"feature_mask : {[i.shape for i in feature_mask]}")
+            # print(f"feature_mask : {[i.shape for i in feature_mask]}")
             self.ori_loss = self.criterion(ori_preds, batch)
             self.mask_loss = self.criterion(mask_preds, batch)
-            feat_loss = self.feat_criterion(feature_ori, feature_mask)
-            print(f"feat_loss : {feat_loss}")
-            # 최종 손실 (스칼라 손실과 텐서 손실을 가중치로 합산)
-            return (self.ori_loss[0] + self.mask_loss[0] + feat_loss[0], self.ori_loss[1] + self.mask_loss[1] + feat_loss[1])
+
+            self.do_feat_loss = False
+
+            if self.do_feat_loss:
+                feat_loss = self.feat_criterion(feature_ori, feature_mask)
+                # print(f"feat_loss : {feat_loss}")
+                # 최종 손실 (스칼라 손실과 텐서 손실을 가중치로 합산)
+                return (self.ori_loss[0] + self.mask_loss[0] + feat_loss[0], self.ori_loss[1] + self.mask_loss[1] + feat_loss[1])
+            else:
+                return (self.ori_loss[0] + self.mask_loss[0], self.ori_loss[1] + self.mask_loss[1])
         else:
             # original code
             return self.criterion(preds, batch)

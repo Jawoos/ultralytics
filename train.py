@@ -14,12 +14,12 @@ def main(args):
     # Train the model
     train_results = model.train(
         # data="coco8.yaml",  # path to dataset YAML
-        data="/workspace/data_path/DATASET/Competition_Dataset/CytologIA/yolo/data.yaml",
-        # data=args.data_path,
+        # data="/workspace/data_path/DATASET/Competition_Dataset/CytologIA/yolo/data.yaml",
+        data=args.data_path,
         epochs=int(args.epoch),  # number of training epochs
         imgsz=320,  # training image size
         device=args.gpu_num,  # device to run on, i.e. device=0 or device=0,1,2,3 or device=cpu
-        batch=4
+        batch=8
     )
 
     # model = XiiYOLO("/DATA_17/pjw/workspace/ultralytics/runs/detect/train/weights/best.pt")
