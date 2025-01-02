@@ -775,6 +775,7 @@ class FeatureMapLoss(nn.Module):
         loss = 0.0
         for f, f_masked in zip(features, masked_features):
             mse = self.mse_loss(f, f_masked)
-            cos = self.cosine_similarity_loss(f, f_masked)
-            loss += self.lambda_mse * mse + self.lambda_cos * cos
+            # cos = self.cosine_similarity_loss(f, f_masked)
+            # loss += self.lambda_mse * mse + self.lambda_cos * cos
+            loss += mse
         return loss

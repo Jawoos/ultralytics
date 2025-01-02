@@ -31,9 +31,10 @@ import torch
 
 import torch.nn as nn
 
+# gradient 유지 되는지 확인
 class CustomActivation(nn.Module):
     def forward(self, x):
-        return torch.where(x > 0.5, x, torch.zeros_like(x))
+        return torch.where(x > 0.50823, x, torch.zeros_like(x))
 
 
 def generate_overlap_bbox_mask(batch_size, height, width, bboxes, original_size, device=torch.device("cuda")):
@@ -213,8 +214,8 @@ class Generator(nn.Module):
         x3 = self.relu(x3)
               
         ## 바운딩 박스 기반의 가중치 마스크를 활용(정답지 가져오기 어려우면 배제)
-        # if targets != None and random.choice([True, False]):
-        if targets != None:
+        if targets != None and random.choice([True, False]):
+        # if targets != None:
             g_batch_size = x1.shape[0]
             g_height = self.target_size[1]
             g_width = self.target_size[0]
@@ -418,13 +419,16 @@ class XiilabModel(DetectionModel):
             output_x = self.head(output_x, y, visualize=visualize, embed=embed)
 
             if not self.training:
+            # if xii:
                 # 1. 경로 파싱
                 try:
                     base_dir = os.path.dirname(self.pt_path)  # best.pt 파일의 디렉토리
+                    save_dir = os.path.join(base_dir, '../mask')  # mask 디렉토리 경로 생성
+                    save_dir = os.path.abspath(save_dir)  # 절대 경로로 변환
                 except AttributeError:
                     base_dir = self.args.save_dir
-                save_dir = os.path.join(base_dir, '../mask')  # mask 디렉토리 경로 생성
-                save_dir = os.path.abspath(save_dir)  # 절대 경로로 변환
+                    save_dir = os.path.join(base_dir, 'mask')  # mask 디렉토리 경로 생성
+                    save_dir = os.path.abspath(save_dir)  # 절대 경로로 변환
 
                 # 2. 저장 디렉토리 생성
                 os.makedirs(save_dir, exist_ok=True)
@@ -455,6 +459,23 @@ class XiilabModel(DetectionModel):
 
                     img = Image.fromarray(numpy_image)
                     img.save(new_file_path)
+
+                    # 4. 새 파일 이름 결정
+                    new_file_name = f"{max_index + 1 + idx}_ori.png"
+                    new_file_path = os.path.join(save_dir, new_file_name)
+
+                    # 5. 이미지 저장
+                    # 텐서를 CPU로 이동 및 값 범위 변환
+                    tensor_image = upscaled_mask[idx].detach().cpu()  # CUDA에서 CPU로 이동
+                    tensor_image = (tensor_image - tensor_image.min()) / (tensor_image.max() - tensor_image.min())  # 값 범위 [0, 1]
+                    tensor_image = (tensor_image * 255).byte()  # 값 범위 [0, 255]
+                    
+                    # 텐서를 NumPy로 변환 (HWC 형태로 변환)
+                    numpy_image = tensor_image.squeeze().numpy()  # CHW -> HWC
+
+                    img = Image.fromarray(numpy_image, mode='L')
+                    img.save(new_file_path)
+                    
             if xii:
                 return output_x, masked_image, [low_feature, mid_feature, high_feature]
             elif self.training:
