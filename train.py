@@ -1,5 +1,10 @@
 import argparse
 
+import numpy as np
+
+import os
+# os.environ["MKL_THREADING_LAYER"] = "GNU"
+
 from ultralytics import YOLO
 from ultralytics.engine.model import Model
 from ultralytics.nn.tasks import attempt_load_one_weight, guess_model_task, nn, yaml_model_load
@@ -19,6 +24,7 @@ def main(args):
         epochs=int(args.epoch),  # number of training epochs
         imgsz=320,  # training image size
         device=args.gpu_num,  # device to run on, i.e. device=0 or device=0,1,2,3 or device=cpu
+        # device=[0, 1],  # device to run on, i.e. device=0 or device=0,1,2,3 or device=cpu
         batch=8
     )
 
@@ -34,8 +40,8 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--epoch', default=100, help='Epoch for Train')
-    parser.add_argument('--gpu_num', default='0', type=str, nargs='+', help='0 1 ...')  # 공백으로 리스트 구현
-    parser.add_argument('--batch_size', default=1, help='Batch Size for Train')
+    parser.add_argument('--gpu_num', default='1', type=str, nargs='+', help='0 1 ...')  # 공백으로 리스트 구현
+    parser.add_argument('--batch_size', default=8, help='Batch Size for Train')
     parser.add_argument('--data_path', default='coco8.yaml', help='Data for train')
     args = parser.parse_args()
 
