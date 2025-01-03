@@ -54,7 +54,7 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--epoch', default=100, help='Epoch for Train')
-    parser.add_argument('--gpu_num', default='0', type=str, nargs='+', help='0 1 ...')  # 공백으로 리스트 구현
+    parser.add_argument('--gpu_num', default='2', type=str, nargs='+', help='0 1 ...')  # 공백으로 리스트 구현
     parser.add_argument('--batch_size', default=4, help='Batch Size for Train')
     # parser.add_argument('--data_path', default='coco8.yaml', help='Data for train')
     # parser.add_argument('--data_path', default='/DATA1/temp/data_tiny_balanced.yaml', help='Data for train')
