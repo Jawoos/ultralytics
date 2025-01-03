@@ -5,8 +5,10 @@ import numpy as np
 import os
 # os.environ["MKL_THREADING_LAYER"] = "GNU"
 
-os.environ["WORLD_SIZE"] = "4"
-os.environ["RANK"] = "0"
+# os.environ["MASTER_ADDR"] = "localhost"
+# os.environ["MASTER_PORT"] = "42017"
+# os.environ["WORLD_SIZE"] = "4"
+# os.environ["RANK"] = "0"
 
 import time
 
@@ -37,7 +39,7 @@ def main(args):
         device=args.gpu_num,  # device to run on, i.e. device=0 or device=0,1,2,3 or device=cpu
         # device=[0, 1],  # device to run on, i.e. device=0 or device=0,1,2,3 or device=cpu
         save_period=5,
-        batch=8
+        batch=args.batch_size
     )
 
     # model = XiiYOLO("/DATA_17/pjw/workspace/ultralytics/runs/detect/train/weights/best.pt")
@@ -52,10 +54,11 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--epoch', default=100, help='Epoch for Train')
-    parser.add_argument('--gpu_num', default='2', type=str, nargs='+', help='0 1 ...')  # 공백으로 리스트 구현
-    parser.add_argument('--batch_size', default=8, help='Batch Size for Train')
+    parser.add_argument('--gpu_num', default='0', type=str, nargs='+', help='0 1 ...')  # 공백으로 리스트 구현
+    parser.add_argument('--batch_size', default=4, help='Batch Size for Train')
     # parser.add_argument('--data_path', default='coco8.yaml', help='Data for train')
-    parser.add_argument('--data_path', default='/DATA1/temp/data_tiny_balanced.yaml', help='Data for train')
+    # parser.add_argument('--data_path', default='/DATA1/temp/data_tiny_balanced.yaml', help='Data for train')
+    parser.add_argument('--data_path', default='/DATA/DATASETS/temp/data_tiny_balanced.yaml', help='Data for train')
     args = parser.parse_args()
 
     main(args)

@@ -34,9 +34,9 @@ import torch.nn as nn
 # gradient 유지 되는지 확인
 class CustomActivation(nn.Module):
     def forward(self, x):
-        # return torch.where(x > 0.5, x, torch.zeros_like(x))
+        return torch.where(x > 0.5, x, torch.zeros_like(x))
         # return torch.where(x > 0.5, torch.ones_like(x), torch.zeros_like(x))
-        return torch.clamp((x - 0.5) * 10000, min=0, max=1)  # 0.5 기준 선형 변화
+        # return torch.clamp((x - 0.5) * 10000, min=0, max=1)  # 0.5 기준 선형 변화
 
 
 def generate_overlap_bbox_mask(batch_size, height, width, bboxes, original_size, device=torch.device("cuda")):
@@ -310,7 +310,7 @@ class XiilabModel(DetectionModel):
 
         self.cfg = cfg
         self.is_split = False
-        self.gen = Generator(768, 768, 768, target_size=(320, 320))   # x
+        self.gen = Generator(768, 768, 768, target_size=(160, 160))   # x
 
         self.activation = CustomActivation()
         
@@ -406,13 +406,13 @@ class XiilabModel(DetectionModel):
                 # else:
                 #     masked_image = x * (upscaled_mask > 0.5).float()  # 추론 시 이진화
 
-                if self.training:
-                    masked_image = upscaled_mask  # 연속 값 사용
-                else:
-                    masked_image = (upscaled_mask > 0.5).float()  # 추론 시 이진화
+                # if self.training:
+                #     masked_image = upscaled_mask  # 연속 값 사용
+                # else:
+                #     masked_image = (upscaled_mask > 0.5).float()  # 추론 시 이진화
 
                 # masked_image = x * self.activation(upscaled_mask)  # 연속 값 사용
-                # masked_image = self.activation(upscaled_mask)
+                masked_image = self.activation(upscaled_mask)
 
             elif self.training:
                 low_feature = y[4]
