@@ -467,13 +467,31 @@ class XiilabModel(DetectionModel):
                     img = Image.fromarray(numpy_image)
                     img.save(new_file_path)
 
-                    # 4. 새 파일 이름 결정
+                    # 마스크 저장
                     new_file_name = f"{max_index + 1 + idx}_mask.png"
                     new_file_path = os.path.join(save_dir, new_file_name)
 
                     # 5. 이미지 저장
                     # 텐서를 CPU로 이동 및 값 범위 변환
                     tensor_image = masked_image[idx].detach().cpu()  # CUDA에서 CPU로 이동
+                    tensor_image = (tensor_image - tensor_image.min()) / (tensor_image.max() - tensor_image.min())  # 값 범위 [0, 1]
+                    tensor_image = (tensor_image * 255).byte()  # 값 범위 [0, 255]
+                    
+                    # 텐서를 NumPy로 변환 (HWC 형태로 변환)
+                    numpy_image = tensor_image.squeeze().numpy()  # CHW -> HWC    흑백
+                    img = Image.fromarray(numpy_image, mode='L')
+
+                    # numpy_image = tensor_image.permute(1, 2, 0).numpy()  # CHW -> HWC     칼라
+                    # img = Image.fromarray(numpy_image, mode='L')
+                    img.save(new_file_path)
+
+                    # 원본 저장
+                    new_file_name = f"{max_index + 1 + idx}_ori.png"
+                    new_file_path = os.path.join(save_dir, new_file_name)
+
+                    # 5. 이미지 저장
+                    # 텐서를 CPU로 이동 및 값 범위 변환
+                    tensor_image = x[idx].detach().cpu()  # CUDA에서 CPU로 이동
                     tensor_image = (tensor_image - tensor_image.min()) / (tensor_image.max() - tensor_image.min())  # 값 범위 [0, 1]
                     tensor_image = (tensor_image * 255).byte()  # 값 범위 [0, 255]
                     
