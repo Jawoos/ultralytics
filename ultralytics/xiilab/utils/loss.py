@@ -843,7 +843,7 @@ class FeatureMapLoss(nn.Module):
         f1_flat = f1.view(f1.size(0), -1)  # Flatten per batch
         f2_flat = f2.view(f2.size(0), -1)
         cos_sim = nn.functional.cosine_similarity(f1_flat, f2_flat, dim=1)
-        return 1 - cos_sim.mean()  # 코사인 유사도를 손실로 반환
+        return cos_sim.mean()  # 코사인 유사도를 손실로 반환
 
     def forward(self, features, masked_features):
         """
@@ -862,7 +862,7 @@ class FeatureMapLoss(nn.Module):
         for feature_group, masked_feature_group in zip(features, masked_features):
             mse = self.mse_loss(feature_group, masked_feature_group)  
             cos = self.cosine_similarity_loss(feature_group, masked_feature_group)  
-            batch_loss = self.lambda_mse * mse + self.lambda_cos * cos
+            batch_loss = self.lambda_mse * mse + self.lambda_cos * (1 - cos)
             batch_losses.append(batch_loss)
             loss += batch_loss
 
@@ -888,11 +888,11 @@ class FeatureMapLoss(nn.Module):
         for feature_group, masked_feature_group in zip(features, masked_features):
             mse = self.mse_loss(feature_group, masked_feature_group)  
             cos = self.cosine_similarity_loss(feature_group, masked_feature_group)  
-            batch_loss = self.lambda_mse * mse + self.lambda_cos * cos
+            batch_loss = self.lambda_mse * (1 / mse) + self.lambda_cos * (1 + cos)
             batch_losses.append(batch_loss)
             loss += batch_loss
 
         batch_losses = torch.stack(batch_losses)
         # batch_size = features[0][0].size(0) 
         batch_size = len(features)
-        return -(loss.sum() * batch_size), -batch_losses.detach()
+        return loss.sum() * batch_size, batch_losses.detach()
