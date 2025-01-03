@@ -318,7 +318,7 @@ class BaseModel(nn.Module):
                 # return (self.ori_loss[0] + self.mask_loss[0] + (feat_loss[0] + reverse_feat_loss[0]), self.ori_loss[1] + self.mask_loss[1] + (feat_loss[1] + reverse_feat_loss[1]))
                 # return (self.ori_loss[0] + self.mask_loss[0] + feat_loss[0] * 0.3 + reverse_feat_loss[0] * 0.25, \
                 #          self.ori_loss[1] + self.mask_loss[1])
-                return (self.ori_loss[0] + self.mask_loss[0] - feat_loss[0] * 0.3 - reverse_feat_loss[0] * 0.25, \
+                return (self.ori_loss[0] + self.mask_loss[0] - feat_loss[0] * 0.5 - reverse_feat_loss[0] * 0.3, \
                          self.ori_loss[1] + self.mask_loss[1])
             else:
                 return (self.ori_loss[0] + self.mask_loss[0], self.ori_loss[1] + self.mask_loss[1])
