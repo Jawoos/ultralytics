@@ -870,3 +870,29 @@ class FeatureMapLoss(nn.Module):
         # batch_size = features[0][0].size(0) 
         batch_size = len(features)
         return loss.sum() * batch_size, batch_losses.detach()
+    
+    def reverse_forward(self, features, masked_features):
+        """
+        Feature Map 손실 계산
+
+        Args:
+            features (list[list[torch.Tensor]]): 원본 Feature Maps (각각 [[B, C, H, W], ...]).
+            masked_features (list[list[torch.Tensor]]): Masked Feature Maps (각각 [[B, C, H, W], ...]).
+
+        Returns:
+            tuple: (총 손실 값, 개별 손실 값 리스트)
+        """
+        loss = 0.0
+        batch_losses = []
+
+        for feature_group, masked_feature_group in zip(features, masked_features):
+            mse = self.mse_loss(feature_group, masked_feature_group)  
+            cos = self.cosine_similarity_loss(feature_group, masked_feature_group)  
+            batch_loss = self.lambda_mse * mse + self.lambda_cos * cos
+            batch_losses.append(batch_loss)
+            loss += batch_loss
+
+        batch_losses = torch.stack(batch_losses)
+        # batch_size = features[0][0].size(0) 
+        batch_size = len(features)
+        return -(loss.sum() * batch_size), -batch_losses.detach()

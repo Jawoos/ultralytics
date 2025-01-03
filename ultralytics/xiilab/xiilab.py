@@ -34,7 +34,9 @@ import torch.nn as nn
 # gradient 유지 되는지 확인
 class CustomActivation(nn.Module):
     def forward(self, x):
-        return torch.where(x > 0.50823, x, torch.zeros_like(x))
+        # return torch.where(x > 0.5, x, torch.zeros_like(x))
+        # return torch.where(x > 0.5, torch.ones_like(x), torch.zeros_like(x))
+        return torch.clamp((x - 0.5) * 10000, min=0, max=1)  # 0.5 기준 선형 변화
 
 
 def generate_overlap_bbox_mask(batch_size, height, width, bboxes, original_size, device=torch.device("cuda")):
@@ -214,20 +216,20 @@ class Generator(nn.Module):
         x3 = self.relu(x3)
               
         ## 바운딩 박스 기반의 가중치 마스크를 활용(정답지 가져오기 어려우면 배제)
-        if targets != None and random.choice([True, False]):
-        # if targets != None:
-            g_batch_size = x1.shape[0]
-            g_height = self.target_size[1]
-            g_width = self.target_size[0]
-            g_bboxes = list()
-            for t in targets:
-                g_bboxes.append(t)        
-            g_original_size = self.target_size
-            weight_mask = generate_overlap_bbox_mask(g_batch_size, g_height, g_width, g_bboxes, g_original_size)
+        # if targets != None and random.choice([True, False]):
+        # # if targets != None:
+        #     g_batch_size = x1.shape[0]
+        #     g_height = self.target_size[1]
+        #     g_width = self.target_size[0]
+        #     g_bboxes = list()
+        #     for t in targets:
+        #         g_bboxes.append(t)        
+        #     g_original_size = self.target_size
+        #     weight_mask = generate_overlap_bbox_mask(g_batch_size, g_height, g_width, g_bboxes, g_original_size)
 
-            x1 = x1 * weight_mask
-            x2 = x2 * weight_mask
-            x3 = x3 * weight_mask
+        #     x1 = x1 * weight_mask
+        #     x2 = x2 * weight_mask
+        #     x3 = x3 * weight_mask
         
         # 채널 정렬
         attn_out1 = self.align1_3(x1)
@@ -399,13 +401,18 @@ class XiilabModel(DetectionModel):
                 upscaled_mask = F.interpolate(mask, size=x.shape[2:], mode='bilinear', align_corners=False)
 
                 ## 마스크값이 0.5이상일때만 활성화하고 나머지는 0으로. => 전경배경 분리된 이미지를 생성
-                ## 마스크값이 0.5이상일때만 활성화하고 나머지는 0으로. => 전경배경 분리된 이미지를 생성
                 # if self.training:
-                #     masked_image = x * torch.sigmoid(upscaled_mask)  # 연속 값 사용
+                #     masked_image = x * upscaled_mask  # 연속 값 사용
                 # else:
-                #     masked_image = x * (torch.sigmoid(upscaled_mask) > 0.5).float()  # 추론 시 이진화
+                #     masked_image = x * (upscaled_mask > 0.5).float()  # 추론 시 이진화
 
-                masked_image = x * self.activation(upscaled_mask)  # 연속 값 사용
+                if self.training:
+                    masked_image = upscaled_mask  # 연속 값 사용
+                else:
+                    masked_image = (upscaled_mask > 0.5).float()  # 추론 시 이진화
+
+                # masked_image = x * self.activation(upscaled_mask)  # 연속 값 사용
+                # masked_image = self.activation(upscaled_mask)
 
             elif self.training:
                 low_feature = y[4]
@@ -450,7 +457,7 @@ class XiilabModel(DetectionModel):
 
                     # 5. 이미지 저장
                     # 텐서를 CPU로 이동 및 값 범위 변환
-                    tensor_image = masked_image[idx].detach().cpu()  # CUDA에서 CPU로 이동
+                    tensor_image = (x[idx] * masked_image[idx]).detach().cpu()  # CUDA에서 CPU로 이동
                     tensor_image = (tensor_image - tensor_image.min()) / (tensor_image.max() - tensor_image.min())  # 값 범위 [0, 1]
                     tensor_image = (tensor_image * 255).byte()  # 값 범위 [0, 255]
                     
@@ -466,14 +473,16 @@ class XiilabModel(DetectionModel):
 
                     # 5. 이미지 저장
                     # 텐서를 CPU로 이동 및 값 범위 변환
-                    tensor_image = upscaled_mask[idx].detach().cpu()  # CUDA에서 CPU로 이동
+                    tensor_image = masked_image[idx].detach().cpu()  # CUDA에서 CPU로 이동
                     tensor_image = (tensor_image - tensor_image.min()) / (tensor_image.max() - tensor_image.min())  # 값 범위 [0, 1]
                     tensor_image = (tensor_image * 255).byte()  # 값 범위 [0, 255]
                     
                     # 텐서를 NumPy로 변환 (HWC 형태로 변환)
-                    numpy_image = tensor_image.squeeze().numpy()  # CHW -> HWC
-
+                    numpy_image = tensor_image.squeeze().numpy()  # CHW -> HWC    흑백
                     img = Image.fromarray(numpy_image, mode='L')
+
+                    # numpy_image = tensor_image.permute(1, 2, 0).numpy()  # CHW -> HWC     칼라
+                    # img = Image.fromarray(numpy_image, mode='L')
                     img.save(new_file_path)
                     
             if xii:
