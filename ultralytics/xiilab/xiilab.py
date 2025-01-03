@@ -468,7 +468,7 @@ class XiilabModel(DetectionModel):
                     img.save(new_file_path)
 
                     # 4. 새 파일 이름 결정
-                    new_file_name = f"{max_index + 1 + idx}_ori.png"
+                    new_file_name = f"{max_index + 1 + idx}_mask.png"
                     new_file_path = os.path.join(save_dir, new_file_name)
 
                     # 5. 이미지 저장
