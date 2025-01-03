@@ -314,9 +314,10 @@ class BaseModel(nn.Module):
 
                 # print(f"feat_loss : {feat_loss}")
                 # 최종 손실 (스칼라 손실과 텐서 손실을 가중치로 합산)
-                return (self.ori_loss[0] + self.mask_loss[0] + (feat_loss[0] + reverse_feat_loss[0]) * 5, self.ori_loss[1] + self.mask_loss[1] + (feat_loss[1] + reverse_feat_loss[1]) * 5)
-                # return (self.ori_loss[0] + self.mask_loss[0] / 4 + feat_loss[0] * 4 + reverse_feat_loss[0] * 3, \
-                #          self.ori_loss[1] + self.mask_loss[1])
+                # return (self.ori_loss[0] + self.mask_loss[0] + (feat_loss[0] + reverse_feat_loss[0]) * 20, self.ori_loss[1] + self.mask_loss[1] + (feat_loss[1] + reverse_feat_loss[1]) * 15)
+                # return (self.ori_loss[0] + self.mask_loss[0] + (feat_loss[0] + reverse_feat_loss[0]), self.ori_loss[1] + self.mask_loss[1] + (feat_loss[1] + reverse_feat_loss[1]))
+                return (self.ori_loss[0] + self.mask_loss[0] + feat_loss[0] * 0.3 + reverse_feat_loss[0] * 0.25, \
+                         self.ori_loss[1] + self.mask_loss[1])
                 # return (self.ori_loss[0] + self.mask_loss[0] + (feat_loss[0] + reverse_feat_loss[0]) * 5, \
                 #         torch.cat((self.ori_loss[1] + self.mask_loss[1], ((feat_loss[1] + reverse_feat_loss[1]).sum() * 5).unsqueeze(0)), dim=0))
             else:
