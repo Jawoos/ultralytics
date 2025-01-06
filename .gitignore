@@ -148,7 +148,7 @@ wandb/
 # Neural Network weights -----------------------------------------------------------------------------------------------
 weights/
 *.weights
-yolo*.pt
+*.pt
 *.pb
 *.onnx
 *.engine
