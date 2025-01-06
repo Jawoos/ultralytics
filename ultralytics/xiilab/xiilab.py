@@ -427,79 +427,79 @@ class XiilabModel(DetectionModel):
 
             # if not self.training:
             # if xii:
-            # if hasattr(self, "pt_path"):    # val.py 에서만 실행
-            #     # 1. 경로 파싱
-            #     try:
-            #         base_dir = os.path.dirname(self.pt_path)  # best.pt 파일의 디렉토리
-            #         save_dir = os.path.join(base_dir, '../mask')  # mask 디렉토리 경로 생성
-            #         save_dir = os.path.abspath(save_dir)  # 절대 경로로 변환
-            #     except AttributeError:
-            #         base_dir = self.args.save_dir
-            #         save_dir = os.path.join(base_dir, 'mask')  # mask 디렉토리 경로 생성
-            #         save_dir = os.path.abspath(save_dir)  # 절대 경로로 변환
+            if hasattr(self, "pt_path"):    # val.py 에서만 실행
+                # 1. 경로 파싱
+                try:
+                    base_dir = os.path.dirname(self.pt_path)  # best.pt 파일의 디렉토리
+                    save_dir = os.path.join(base_dir, '../mask')  # mask 디렉토리 경로 생성
+                    save_dir = os.path.abspath(save_dir)  # 절대 경로로 변환
+                except AttributeError:
+                    base_dir = self.args.save_dir
+                    save_dir = os.path.join(base_dir, 'mask')  # mask 디렉토리 경로 생성
+                    save_dir = os.path.abspath(save_dir)  # 절대 경로로 변환
 
-            #     # 2. 저장 디렉토리 생성
-            #     os.makedirs(save_dir, exist_ok=True)
+                # 2. 저장 디렉토리 생성
+                os.makedirs(save_dir, exist_ok=True)
 
-            #     # 3. 저장 디렉토리에 존재하는 파일 이름 확인
-            #     existing_files = [f for f in os.listdir(save_dir) if f.endswith('.png')]
-            #     max_index = 0
-            #     for file in existing_files:
-            #         try:
-            #             index = int(os.path.splitext(file)[0])  # 파일명에서 숫자 추출
-            #             max_index = max(max_index, index)
-            #         except ValueError:
-            #             continue  # 숫자가 아닌 파일은 무시
+                # 3. 저장 디렉토리에 존재하는 파일 이름 확인
+                existing_files = [f for f in os.listdir(save_dir) if f.endswith('.png')]
+                max_index = 0
+                for file in existing_files:
+                    try:
+                        index = int(os.path.splitext(file)[0])  # 파일명에서 숫자 추출
+                        max_index = max(max_index, index)
+                    except ValueError:
+                        continue  # 숫자가 아닌 파일은 무시
                     
-            #     for idx in range(masked_image.shape[0]):
-            #         # 4. 새 파일 이름 결정
-            #         new_file_name = f"{max_index + 1 + idx}.png"
-            #         new_file_path = os.path.join(save_dir, new_file_name)
+                for idx in range(masked_image.shape[0]):
+                    # 4. 새 파일 이름 결정
+                    new_file_name = f"{max_index + 1 + idx}.png"
+                    new_file_path = os.path.join(save_dir, new_file_name)
 
-            #         # 5. 이미지 저장
-            #         # 텐서를 CPU로 이동 및 값 범위 변환
-            #         tensor_image = (x[idx] * masked_image[idx]).detach().cpu()  # CUDA에서 CPU로 이동
-            #         tensor_image = (tensor_image - tensor_image.min()) / (tensor_image.max() - tensor_image.min())  # 값 범위 [0, 1]
-            #         tensor_image = (tensor_image * 255).byte()  # 값 범위 [0, 255]
+                    # 5. 이미지 저장
+                    # 텐서를 CPU로 이동 및 값 범위 변환
+                    tensor_image = (x[idx] * masked_image[idx]).detach().cpu()  # CUDA에서 CPU로 이동
+                    tensor_image = (tensor_image - tensor_image.min()) / (tensor_image.max() - tensor_image.min())  # 값 범위 [0, 1]
+                    tensor_image = (tensor_image * 255).byte()  # 값 범위 [0, 255]
                     
-            #         # 텐서를 NumPy로 변환 (HWC 형태로 변환)
-            #         numpy_image = tensor_image.squeeze().permute(1, 2, 0).numpy()  # CHW -> HWC
+                    # 텐서를 NumPy로 변환 (HWC 형태로 변환)
+                    numpy_image = tensor_image.squeeze().permute(1, 2, 0).numpy()  # CHW -> HWC
 
-            #         img = Image.fromarray(numpy_image)
-            #         img.save(new_file_path)
+                    img = Image.fromarray(numpy_image)
+                    img.save(new_file_path)
 
-            #         # 마스크 저장
-            #         new_file_name = f"{max_index + 1 + idx}_mask.png"
-            #         new_file_path = os.path.join(save_dir, new_file_name)
+                    # 마스크 저장
+                    new_file_name = f"{max_index + 1 + idx}_mask.png"
+                    new_file_path = os.path.join(save_dir, new_file_name)
 
-            #         # 5. 이미지 저장
-            #         # 텐서를 CPU로 이동 및 값 범위 변환
-            #         tensor_image = masked_image[idx].detach().cpu()  # CUDA에서 CPU로 이동
-            #         tensor_image = (tensor_image - tensor_image.min()) / (tensor_image.max() - tensor_image.min())  # 값 범위 [0, 1]
-            #         tensor_image = (tensor_image * 255).byte()  # 값 범위 [0, 255]
+                    # 5. 이미지 저장
+                    # 텐서를 CPU로 이동 및 값 범위 변환
+                    tensor_image = masked_image[idx].detach().cpu()  # CUDA에서 CPU로 이동
+                    tensor_image = (tensor_image - tensor_image.min()) / (tensor_image.max() - tensor_image.min())  # 값 범위 [0, 1]
+                    tensor_image = (tensor_image * 255).byte()  # 값 범위 [0, 255]
                     
-            #         # 텐서를 NumPy로 변환 (HWC 형태로 변환)
-            #         numpy_image = tensor_image.squeeze().numpy()  # CHW -> HWC    흑백
-            #         img = Image.fromarray(numpy_image, mode='L')
+                    # 텐서를 NumPy로 변환 (HWC 형태로 변환)
+                    numpy_image = tensor_image.squeeze().numpy()  # CHW -> HWC    흑백
+                    img = Image.fromarray(numpy_image, mode='L')
 
-            #         # numpy_image = tensor_image.permute(1, 2, 0).numpy()  # CHW -> HWC     칼라
-            #         # img = Image.fromarray(numpy_image, mode='L')
-            #         img.save(new_file_path)
+                    # numpy_image = tensor_image.permute(1, 2, 0).numpy()  # CHW -> HWC     칼라
+                    # img = Image.fromarray(numpy_image, mode='L')
+                    img.save(new_file_path)
 
-            #         # 원본 저장
-            #         new_file_name = f"{max_index + 1 + idx}_ori.png"
-            #         new_file_path = os.path.join(save_dir, new_file_name)
+                    # 원본 저장
+                    new_file_name = f"{max_index + 1 + idx}_ori.png"
+                    new_file_path = os.path.join(save_dir, new_file_name)
 
-            #         # 5. 이미지 저장
-            #         tensor_image = (x[idx]).detach().cpu()  # CUDA에서 CPU로 이동
-            #         tensor_image = (tensor_image - tensor_image.min()) / (tensor_image.max() - tensor_image.min())  # 값 범위 [0, 1]
-            #         tensor_image = (tensor_image * 255).byte()  # 값 범위 [0, 255]
+                    # 5. 이미지 저장
+                    tensor_image = (x[idx]).detach().cpu()  # CUDA에서 CPU로 이동
+                    tensor_image = (tensor_image - tensor_image.min()) / (tensor_image.max() - tensor_image.min())  # 값 범위 [0, 1]
+                    tensor_image = (tensor_image * 255).byte()  # 값 범위 [0, 255]
                     
-            #         # 텐서를 NumPy로 변환 (HWC 형태로 변환)
-            #         numpy_image = tensor_image.squeeze().permute(1, 2, 0).numpy()  # CHW -> HWC
+                    # 텐서를 NumPy로 변환 (HWC 형태로 변환)
+                    numpy_image = tensor_image.squeeze().permute(1, 2, 0).numpy()  # CHW -> HWC
 
-            #         img = Image.fromarray(numpy_image)
-            #         img.save(new_file_path)
+                    img = Image.fromarray(numpy_image)
+                    img.save(new_file_path)
                     
             if xii:
                 return output_x, masked_image, [low_feature, mid_feature, high_feature]

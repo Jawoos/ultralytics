@@ -318,10 +318,10 @@ class BaseModel(nn.Module):
                 # return (self.ori_loss[0] + self.mask_loss[0] + (feat_loss[0] + reverse_feat_loss[0]), self.ori_loss[1] + self.mask_loss[1] + (feat_loss[1] + reverse_feat_loss[1]))
                 # return (self.ori_loss[0] + self.mask_loss[0] + feat_loss[0] * 0.3 + reverse_feat_loss[0] * 0.25, \
                 #          self.ori_loss[1] + self.mask_loss[1])
-                # return (self.ori_loss[0] + self.mask_loss[0] + feat_loss[0] * 5 + reverse_feat_loss[0] * 4, \
-                #          self.ori_loss[1] + self.mask_loss[1])
-                return (self.ori_loss[0] + self.mask_loss[0] + feat_loss[0] * 0.5 + reverse_feat_loss[0] * 0.5, \
+                return (self.ori_loss[0] + self.mask_loss[0] + feat_loss[0] * 0.8 + reverse_feat_loss[0] * 0.5, \
                          self.ori_loss[1] + self.mask_loss[1])
+                # return (self.ori_loss[0] + self.mask_loss[0] + feat_loss[0] * 0.5 + reverse_feat_loss[0] * 0.5, \
+                #          self.ori_loss[1] + self.mask_loss[1])
 
                 # loss clamp하여 nan으로 가는 문제 해결
                 # return (torch.clamp(self.ori_loss[0] + self.mask_loss[0] + feat_loss[0] * 0.5 + reverse_feat_loss[0] * 0.5, min=1e-7, max=1e7), \

@@ -20,14 +20,14 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--gpu_num', default='1', type=str, nargs='+', help='0 1 ...')  # 공백으로 리스트 구현
+    parser.add_argument('--gpu_num', default='0', type=str, nargs='+', help='0 1 ...')  # 공백으로 리스트 구현
     parser.add_argument('--batch_size', default=8, help='Batch Size for Train')
-    # parser.add_argument('--data_path', default='/DATA/DATASETS/temp/data_tiny_balanced.yaml', help='Data for train') ## 6번 서버
+    parser.add_argument('--data_path', default='/DATA/DATASETS/temp/data_tiny_balanced.yaml', help='Data for train') ## 6번 서버
     # parser.add_argument('--data_path', default='/DATA1/temp/data_tiny_balanced.yaml', help='Data for train')    # A40
 
-    parser.add_argument('--data_path', default='/DATA/DATASETS/temp/data_all.yaml', help='Data for train') ## 6번 서버
+    # parser.add_argument('--data_path', default='/DATA/DATASETS/temp/data_all.yaml', help='Data for train') ## 6번 서버
 
-    parser.add_argument('--model_path', default="/DATA_17/pjw/workspace/ultralytics/runs/detect/train45/weights/best.pt", help='Data for train')
+    parser.add_argument('--model_path', default="/DATA_17/pjw/workspace/ultralytics/runs/detect/train51/weights/best.pt", help='Data for train')
     # parser.add_argument('--model_path', default="/DATA_17/pjw/workspace/ultralytics/runs/detect/train27/weights/epoch40.pt", help='Data for train')
     args = parser.parse_args()
 

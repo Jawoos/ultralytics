@@ -823,12 +823,221 @@ class FeatureMapLoss(nn.Module):
         # return loss.sum() * batch_size, loss.detach()  # loss(box, cls, dfl)
         return loss
 
+# class FeatureMapLoss(nn.Module):
+#     def __init__(self, lambda_mse=1.0, lambda_cos=1.0):
+#         super(FeatureMapLoss, self).__init__()
+#         self.mse_loss = nn.MSELoss(reduction='mean')  # 평균 MSE 손실 계산
+#         self.lambda_mse = lambda_mse
+#         self.lambda_cos = lambda_cos
+
+#     def cosine_similarity_loss(self, f1, f2):
+#         """
+#         코사인 유사도를 기반으로 손실 계산
+#         Args:
+#             f1 (torch.Tensor): 원본 Feature Map.
+#             f2 (torch.Tensor): Masked Feature Map.
+
+#         Returns:
+#             torch.Tensor: 코사인 유사도 손실.
+#         """
+#         f1_flat = f1.view(f1.size(0), -1)  # Flatten per batch
+#         f2_flat = f2.view(f2.size(0), -1)
+#         cos_sim = nn.functional.cosine_similarity(f1_flat, f2_flat, dim=1)
+#         return cos_sim.mean()  # 코사인 유사도를 손실로 반환
+
+#     def forward(self, features, masked_features):
+#         """
+#         Feature Map 손실 계산
+
+#         Args:
+#             features (list[list[torch.Tensor]]): 원본 Feature Maps (각각 [[B, C, H, W], ...]).
+#             masked_features (list[list[torch.Tensor]]): Masked Feature Maps (각각 [[B, C, H, W], ...]).
+            
+#         Returns:
+#             tuple: (총 손실 값, 개별 손실 값 리스트)
+#         """
+#         loss = 0.0
+#         batch_losses = []
+
+#         for feature_group, masked_feature_group in zip(features, masked_features):
+#             mse = self.mse_loss(feature_group, masked_feature_group)  
+#             cos = self.cosine_similarity_loss(feature_group, masked_feature_group)  
+#             batch_loss = self.lambda_mse * mse + self.lambda_cos * (1 - cos)
+#             # batch_loss = self.lambda_cos * (1 - cos)
+#             batch_losses.append(batch_loss)
+#             loss += batch_loss
+
+#         batch_losses = torch.stack(batch_losses)
+#         # batch_size = features[0][0].size(0) 
+#         batch_size = len(features)
+#         return loss.sum() * batch_size, batch_losses.detach()
+    
+#     def reverse_forward(self, features, masked_features):
+#         """
+#         Feature Map 손실 계산
+
+#         Args:
+#             features (list[list[torch.Tensor]]): 원본 Feature Maps (각각 [[B, C, H, W], ...]).
+#             masked_features (list[list[torch.Tensor]]): Masked Feature Maps (각각 [[B, C, H, W], ...]).
+#             (1+cos) + (1/mse)
+#         Returns:
+#             tuple: (총 손실 값, 개별 손실 값 리스트)
+#         """
+#         loss = 0.0
+#         batch_losses = []
+
+#         for feature_group, masked_feature_group in zip(features, masked_features):
+#             mse = self.mse_loss(feature_group, masked_feature_group)  
+#             cos = self.cosine_similarity_loss(feature_group, masked_feature_group)  
+
+#             # batch_loss = self.lambda_mse * (1 / mse) + self.lambda_cos * (1 + cos)
+#             # batch_loss = self.lambda_mse * (-1 * mse) + self.lambda_cos * (1 + cos)
+
+#             # if cos.item() < 0:
+#             #     cos *= -1
+#             # batch_loss = self.lambda_mse * (1 / mse) + self.lambda_cos * cos
+#             batch_loss = self.lambda_mse * (-1 * mse) + self.lambda_cos * cos
+
+#             # batch_loss = self.lambda_cos * (cos)
+
+#             batch_losses.append(batch_loss)
+#             loss += batch_loss
+
+#         batch_losses = torch.stack(batch_losses)
+#         # batch_size = features[0][0].size(0) 
+#         batch_size = len(features)
+#         return loss.sum() * batch_size, batch_losses.detach()
+
+
+# class FeatureMapLoss(nn.Module):
+#     def __init__(self, lambda_mse=1.0, lambda_cos=1.0):
+#         super(FeatureMapLoss, self).__init__()
+#         self.mse_loss = nn.MSELoss(reduction='mean')  # 평균 MSE 손실 계산
+#         self.lambda_mse = lambda_mse
+#         self.lambda_cos = lambda_cos
+
+#     def normalize(self, tensor):
+#         """
+#         정규화를 적용하여 평균 0, 표준 편차 1로 변환
+#         Args:
+#             tensor (torch.Tensor): 입력 텐서 (B, C, H, W)
+
+#         Returns:
+#             torch.Tensor: 정규화된 텐서
+#         """
+#         mean = tensor.mean(dim=[1, 2, 3], keepdim=True)  # 배치별 평균 계산
+#         std = tensor.std(dim=[1, 2, 3], keepdim=True) + 1e-8  # 배치별 표준편차 계산
+#         return (tensor - mean) / std  # 정규화
+
+#     def cosine_similarity_loss(self, f1, f2):
+#         """
+#         코사인 유사도를 기반으로 손실 계산
+#         Args:
+#             f1 (torch.Tensor): 원본 Feature Map.
+#             f2 (torch.Tensor): Masked Feature Map.
+
+#         Returns:
+#             torch.Tensor: 코사인 유사도 손실.
+#         """
+#         f1_flat = f1.view(f1.size(0), -1)  # Flatten per batch
+#         f2_flat = f2.view(f2.size(0), -1)
+#         cos_sim = nn.functional.cosine_similarity(f1_flat, f2_flat, dim=1)
+#         return cos_sim.mean()  # 코사인 유사도를 손실로 반환
+
+#     def forward(self, features, masked_features):
+#         """
+#         Feature Map 손실 계산
+
+#         Args:
+#             features (list[list[torch.Tensor]]): 원본 Feature Maps (각각 [[B, C, H, W], ...]).
+#             masked_features (list[list[torch.Tensor]]): Masked Feature Maps (각각 [[B, C, H, W], ...]).
+
+#         Returns:
+#             tuple: (총 손실 값, 개별 손실 값 리스트)
+#         """
+#         loss = 0.0
+#         batch_losses = []
+
+#         for feature_group, masked_feature_group in zip(features, masked_features):
+#             # 정규화 적용
+#             feature_group = self.normalize(feature_group)
+#             masked_feature_group = self.normalize(masked_feature_group)
+
+#             # 손실 계산
+#             mse = self.mse_loss(feature_group, masked_feature_group)  
+#             cos = self.cosine_similarity_loss(feature_group, masked_feature_group)  
+#             batch_loss = self.lambda_mse * mse + self.lambda_cos * (1 - cos)
+#             batch_losses.append(batch_loss)
+#             loss += batch_loss
+
+#         batch_losses = torch.stack(batch_losses)
+#         batch_size = len(features)
+#         return loss.sum() * batch_size, batch_losses.detach()
+    
+#     def reverse_forward(self, features, masked_features):
+#         """
+#         Feature Map 손실 계산 (역 손실)
+
+#         Args:
+#             features (list[list[torch.Tensor]]): 원본 Feature Maps (각각 [[B, C, H, W], ...]).
+#             masked_features (list[list[torch.Tensor]]): Masked Feature Maps (각각 [[B, C, H, W], ...]).
+
+#         Returns:
+#             tuple: (총 손실 값, 개별 손실 값 리스트)
+#         """
+#         loss = 0.0
+#         batch_losses = []
+
+#         for feature_group, masked_feature_group in zip(features, masked_features):
+#             # 정규화 적용
+#             feature_group = self.normalize(feature_group)
+#             masked_feature_group = self.normalize(masked_feature_group)
+
+#             # 손실 계산
+#             mse = self.mse_loss(feature_group, masked_feature_group)  
+#             cos = self.cosine_similarity_loss(feature_group, masked_feature_group)  
+#             batch_loss = self.lambda_mse * (-1 * mse) + self.lambda_cos * cos
+#             batch_losses.append(batch_loss)
+#             loss += batch_loss
+
+#         batch_losses = torch.stack(batch_losses)
+#         batch_size = len(features)
+#         return loss.sum() * batch_size, batch_losses.detach()
+    
+
 class FeatureMapLoss(nn.Module):
     def __init__(self, lambda_mse=1.0, lambda_cos=1.0):
         super(FeatureMapLoss, self).__init__()
         self.mse_loss = nn.MSELoss(reduction='mean')  # 평균 MSE 손실 계산
         self.lambda_mse = lambda_mse
         self.lambda_cos = lambda_cos
+
+    def normalize(self, tensor):
+        """
+        정규화를 적용하여 평균 0, 표준 편차 1로 변환
+        Args:
+            tensor (torch.Tensor): 입력 텐서 (B, C, H, W)
+
+        Returns:
+            torch.Tensor: 정규화된 텐서
+        """
+        mean = tensor.mean(dim=[1, 2, 3], keepdim=True)  # 배치별 평균 계산
+        std = tensor.std(dim=[1, 2, 3], keepdim=True) + 1e-8  # 배치별 표준편차 계산
+        return (tensor - mean) / std  # 정규화
+
+    def inverse_mse_loss(self, x, y):
+        """
+        두 벡터가 반대 방향으로 학습되도록 MSE 기반 손실 계산
+        Args:
+            x (torch.Tensor): 학습 대상 벡터 (크기: [batch_size, feature_dim]).
+            y (torch.Tensor): 고정된 기준 벡터 (크기: [batch_size, feature_dim]).
+
+        Returns:
+            torch.Tensor: 두 벡터의 반대 방향성을 기반으로 계산된 손실 값.
+        """
+        diff = x + y  # 벡터의 반대 방향을 학습
+        loss = torch.mean(diff ** 2)
+        return loss
 
     def cosine_similarity_loss(self, f1, f2):
         """
@@ -852,7 +1061,7 @@ class FeatureMapLoss(nn.Module):
         Args:
             features (list[list[torch.Tensor]]): 원본 Feature Maps (각각 [[B, C, H, W], ...]).
             masked_features (list[list[torch.Tensor]]): Masked Feature Maps (각각 [[B, C, H, W], ...]).
-            
+
         Returns:
             tuple: (총 손실 값, 개별 손실 값 리스트)
         """
@@ -860,26 +1069,29 @@ class FeatureMapLoss(nn.Module):
         batch_losses = []
 
         for feature_group, masked_feature_group in zip(features, masked_features):
+            # 정규화 적용
+            feature_group = self.normalize(feature_group)
+            masked_feature_group = self.normalize(masked_feature_group)
+
+            # 손실 계산
             mse = self.mse_loss(feature_group, masked_feature_group)  
             cos = self.cosine_similarity_loss(feature_group, masked_feature_group)  
-            batch_loss = self.lambda_mse * mse + self.lambda_cos * (1 - cos)
-            # batch_loss = self.lambda_cos * (1 - cos)
+            batch_loss = self.lambda_mse * mse * 4 + self.lambda_cos * (1 - cos)
             batch_losses.append(batch_loss)
             loss += batch_loss
 
         batch_losses = torch.stack(batch_losses)
-        # batch_size = features[0][0].size(0) 
         batch_size = len(features)
         return loss.sum() * batch_size, batch_losses.detach()
-    
+
     def reverse_forward(self, features, masked_features):
         """
-        Feature Map 손실 계산
+        Feature Map 손실 계산 (역 손실)
 
         Args:
             features (list[list[torch.Tensor]]): 원본 Feature Maps (각각 [[B, C, H, W], ...]).
             masked_features (list[list[torch.Tensor]]): Masked Feature Maps (각각 [[B, C, H, W], ...]).
-            (1+cos) + (1/mse)
+
         Returns:
             tuple: (총 손실 값, 개별 손실 값 리스트)
         """
@@ -887,215 +1099,24 @@ class FeatureMapLoss(nn.Module):
         batch_losses = []
 
         for feature_group, masked_feature_group in zip(features, masked_features):
-            mse = self.mse_loss(feature_group, masked_feature_group)  
+            # 정규화 제거 (주석 처리된 부분 유지)
+            feature_group = self.normalize(feature_group)
+            masked_feature_group = self.normalize(masked_feature_group)
+
+            # # 손실 계산
+            # mse = self.mse_loss(feature_group, masked_feature_group)  
+            # cos = self.cosine_similarity_loss(feature_group, masked_feature_group)  
+            # batch_loss = self.lambda_mse * (-1 * mse) + self.lambda_cos * cos
+            # batch_losses.append(batch_loss)
+            # loss += batch_loss
+
+            # 손실 계산
+            mse = self.inverse_mse_loss(feature_group, masked_feature_group)  
             cos = self.cosine_similarity_loss(feature_group, masked_feature_group)  
-
-            # batch_loss = self.lambda_mse * (1 / mse) + self.lambda_cos * (1 + cos)
-            # batch_loss = self.lambda_mse * (-1 * mse) + self.lambda_cos * (1 + cos)
-
-            # if cos.item() < 0:
-            #     cos *= -1
-            # batch_loss = self.lambda_mse * (1 / mse) + self.lambda_cos * cos
-            batch_loss = self.lambda_mse * (-1 * mse) + self.lambda_cos * cos
-
-            # batch_loss = self.lambda_cos * (cos)
-
+            batch_loss = self.lambda_mse * (mse) * 0.25 + self.lambda_cos * (cos)
             batch_losses.append(batch_loss)
             loss += batch_loss
 
         batch_losses = torch.stack(batch_losses)
-        # batch_size = features[0][0].size(0) 
         batch_size = len(features)
         return loss.sum() * batch_size, batch_losses.detach()
-
-
-# class FeatureMapLoss(nn.Module):
-#     def __init__(self, lambda_mse=1.0, lambda_cos=1.0):
-#         super(FeatureMapLoss, self).__init__()
-#         self.mse_loss = nn.MSELoss(reduction='mean')  # 평균 MSE 손실 계산
-#         self.lambda_mse = lambda_mse
-#         self.lambda_cos = lambda_cos
-
-#     def normalize(self, tensor):
-#         """
-#         정규화를 적용하여 평균 0, 표준 편차 1로 변환
-#         Args:
-#             tensor (torch.Tensor): 입력 텐서 (B, C, H, W)
-
-#         Returns:
-#             torch.Tensor: 정규화된 텐서
-#         """
-#         mean = tensor.mean(dim=[1, 2, 3], keepdim=True)  # 배치별 평균 계산
-#         std = tensor.std(dim=[1, 2, 3], keepdim=True) + 1e-8  # 배치별 표준편차 계산
-#         return (tensor - mean) / std  # 정규화
-
-#     def cosine_similarity_loss(self, f1, f2):
-#         """
-#         코사인 유사도를 기반으로 손실 계산
-#         Args:
-#             f1 (torch.Tensor): 원본 Feature Map.
-#             f2 (torch.Tensor): Masked Feature Map.
-
-#         Returns:
-#             torch.Tensor: 코사인 유사도 손실.
-#         """
-#         f1_flat = f1.view(f1.size(0), -1)  # Flatten per batch
-#         f2_flat = f2.view(f2.size(0), -1)
-#         cos_sim = nn.functional.cosine_similarity(f1_flat, f2_flat, dim=1)
-#         return cos_sim.mean()  # 코사인 유사도를 손실로 반환
-
-#     def forward(self, features, masked_features):
-#         """
-#         Feature Map 손실 계산
-
-#         Args:
-#             features (list[list[torch.Tensor]]): 원본 Feature Maps (각각 [[B, C, H, W], ...]).
-#             masked_features (list[list[torch.Tensor]]): Masked Feature Maps (각각 [[B, C, H, W], ...]).
-
-#         Returns:
-#             tuple: (총 손실 값, 개별 손실 값 리스트)
-#         """
-#         loss = 0.0
-#         batch_losses = []
-
-#         for feature_group, masked_feature_group in zip(features, masked_features):
-#             # 정규화 적용
-#             feature_group = self.normalize(feature_group)
-#             masked_feature_group = self.normalize(masked_feature_group)
-
-#             # 손실 계산
-#             mse = self.mse_loss(feature_group, masked_feature_group)  
-#             cos = self.cosine_similarity_loss(feature_group, masked_feature_group)  
-#             batch_loss = self.lambda_mse * mse + self.lambda_cos * (1 - cos)
-#             batch_losses.append(batch_loss)
-#             loss += batch_loss
-
-#         batch_losses = torch.stack(batch_losses)
-#         batch_size = len(features)
-#         return loss.sum() * batch_size, batch_losses.detach()
-    
-#     def reverse_forward(self, features, masked_features):
-#         """
-#         Feature Map 손실 계산 (역 손실)
-
-#         Args:
-#             features (list[list[torch.Tensor]]): 원본 Feature Maps (각각 [[B, C, H, W], ...]).
-#             masked_features (list[list[torch.Tensor]]): Masked Feature Maps (각각 [[B, C, H, W], ...]).
-
-#         Returns:
-#             tuple: (총 손실 값, 개별 손실 값 리스트)
-#         """
-#         loss = 0.0
-#         batch_losses = []
-
-#         for feature_group, masked_feature_group in zip(features, masked_features):
-#             # 정규화 적용
-#             feature_group = self.normalize(feature_group)
-#             masked_feature_group = self.normalize(masked_feature_group)
-
-#             # 손실 계산
-#             mse = self.mse_loss(feature_group, masked_feature_group)  
-#             cos = self.cosine_similarity_loss(feature_group, masked_feature_group)  
-#             batch_loss = self.lambda_mse * (-1 * mse) + self.lambda_cos * cos
-#             batch_losses.append(batch_loss)
-#             loss += batch_loss
-
-#         batch_losses = torch.stack(batch_losses)
-#         batch_size = len(features)
-#         return loss.sum() * batch_size, batch_losses.detach()
-    
-
-# class FeatureMapLoss(nn.Module):
-#     def __init__(self, lambda_mse=1.0, lambda_cos=1.0):
-#         super(FeatureMapLoss, self).__init__()
-#         self.mse_loss = nn.MSELoss(reduction='mean')  # 평균 MSE 손실 계산
-#         self.lambda_mse = lambda_mse
-#         self.lambda_cos = lambda_cos
-
-#     def normalize(self, tensor):
-#         """
-#         정규화를 적용하여 평균 0, 표준 편차 1로 변환
-#         Args:
-#             tensor (torch.Tensor): 입력 텐서 (B, C, H, W)
-
-#         Returns:
-#             torch.Tensor: 정규화된 텐서
-#         """
-#         mean = tensor.mean(dim=[1, 2, 3], keepdim=True)  # 배치별 평균 계산
-#         std = tensor.std(dim=[1, 2, 3], keepdim=True) + 1e-8  # 배치별 표준편차 계산
-#         return (tensor - mean) / std  # 정규화
-
-#     def cosine_similarity_loss(self, f1, f2):
-#         """
-#         코사인 유사도를 기반으로 손실 계산
-#         Args:
-#             f1 (torch.Tensor): 원본 Feature Map.
-#             f2 (torch.Tensor): Masked Feature Map.
-
-#         Returns:
-#             torch.Tensor: 코사인 유사도 손실.
-#         """
-#         f1_flat = f1.view(f1.size(0), -1)  # Flatten per batch
-#         f2_flat = f2.view(f2.size(0), -1)
-#         cos_sim = nn.functional.cosine_similarity(f1_flat, f2_flat, dim=1)
-#         return cos_sim.mean()  # 코사인 유사도를 손실로 반환
-
-#     def forward(self, features, masked_features):
-#         """
-#         Feature Map 손실 계산
-
-#         Args:
-#             features (list[list[torch.Tensor]]): 원본 Feature Maps (각각 [[B, C, H, W], ...]).
-#             masked_features (list[list[torch.Tensor]]): Masked Feature Maps (각각 [[B, C, H, W], ...]).
-
-#         Returns:
-#             tuple: (총 손실 값, 개별 손실 값 리스트)
-#         """
-#         loss = 0.0
-#         batch_losses = []
-
-#         for feature_group, masked_feature_group in zip(features, masked_features):
-#             # 정규화 적용
-#             feature_group = self.normalize(feature_group)
-#             masked_feature_group = self.normalize(masked_feature_group)
-
-#             # 손실 계산
-#             mse = self.mse_loss(feature_group, masked_feature_group)  
-#             cos = self.cosine_similarity_loss(feature_group, masked_feature_group)  
-#             batch_loss = self.lambda_mse * mse + self.lambda_cos * (1 - cos)
-#             batch_losses.append(batch_loss)
-#             loss += batch_loss
-
-#         batch_losses = torch.stack(batch_losses)
-#         batch_size = len(features)
-#         return loss.sum() * batch_size, batch_losses.detach()
-
-#     def reverse_forward(self, features, masked_features):
-#         """
-#         Feature Map 손실 계산 (역 손실)
-
-#         Args:
-#             features (list[list[torch.Tensor]]): 원본 Feature Maps (각각 [[B, C, H, W], ...]).
-#             masked_features (list[list[torch.Tensor]]): Masked Feature Maps (각각 [[B, C, H, W], ...]).
-
-#         Returns:
-#             tuple: (총 손실 값, 개별 손실 값 리스트)
-#         """
-#         loss = 0.0
-#         batch_losses = []
-
-#         for feature_group, masked_feature_group in zip(features, masked_features):
-#             # 정규화 제거 (주석 처리된 부분 유지)
-#             feature_group = self.normalize(feature_group)
-#             masked_feature_group = self.normalize(masked_feature_group)
-
-#             # 손실 계산
-#             mse = self.mse_loss(feature_group, masked_feature_group)  
-#             cos = self.cosine_similarity_loss(feature_group, masked_feature_group)  
-#             batch_loss = self.lambda_mse * (-1 * mse) + self.lambda_cos * cos
-#             batch_losses.append(batch_loss)
-#             loss += batch_loss
-
-#         batch_losses = torch.stack(batch_losses)
-#         batch_size = len(features)
-#         return loss.sum() * batch_size, batch_losses.detach()
