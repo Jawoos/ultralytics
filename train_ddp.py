@@ -29,13 +29,26 @@ def main(args):
     model = XiiYOLO("yolo11x.pt")
 
     # Train the model
+    # train_results = model.train(
+    #     data=args.data_path,  # path to dataset YAML
+    #     epochs=int(args.epoch),  # number of training epochs
+    #     imgsz=640,  # training image size
+    #     device=[0,1,2,3],  # specific GPU assigned to the process
+    #     save_period=5,
+    #     batch=args.batch_size
+    # )
+
     train_results = model.train(
-        data=args.data_path,  # path to dataset YAML
+        # data="coco8.yaml",  # path to dataset YAML
+        # data="/workspace/data_path/DATASET/Competition_Dataset/CytologIA/yolo/data.yaml",
+        data=args.data_path,
         epochs=int(args.epoch),  # number of training epochs
         imgsz=640,  # training image size
-        device=[0,1,2,3],  # specific GPU assigned to the process
+        # device=args.gpu_num,  # device to run on, i.e. device=0 or device=0,1,2,3 or device=cpu
+        device=[1,2,3],  # device to run on, i.e. device=0 or device=0,1,2,3 or device=cpu
         save_period=5,
-        batch=args.batch_size
+        batch=args.batch_size,
+        project = "./runs/detect/"
     )
 
     # Evaluate model performance on the validation set
@@ -47,7 +60,7 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--epoch', default=500, help='Epoch for Train')
-    parser.add_argument('--batch_size', default=16, help='Batch Size for Train')
+    parser.add_argument('--batch_size', default=12, help='Batch Size for Train')
     # parser.add_argument('--data_path', default='/DATA1/temp/data_all.yaml', help='Data for train')
     parser.add_argument('--data_path', default='/DATA/DATASETS/temp/data_all.yaml', help='Data for train')
     # parser.add_argument('--data_path', default='/DATA/DATASETS/temp/data_tiny_balanced.yaml', help='Data for train')

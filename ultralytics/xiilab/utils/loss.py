@@ -1077,6 +1077,7 @@ class FeatureMapLoss(nn.Module):
             mse = self.mse_loss(feature_group, masked_feature_group)  
             cos = self.cosine_similarity_loss(feature_group, masked_feature_group)  
             batch_loss = self.lambda_mse * mse * 4 + self.lambda_cos * (1 - cos)
+            # batch_loss = self.lambda_mse * mse + self.lambda_cos * (1 - cos)
             batch_losses.append(batch_loss)
             loss += batch_loss
 
@@ -1114,6 +1115,7 @@ class FeatureMapLoss(nn.Module):
             mse = self.inverse_mse_loss(feature_group, masked_feature_group)  
             cos = self.cosine_similarity_loss(feature_group, masked_feature_group)  
             batch_loss = self.lambda_mse * (mse) * 0.25 + self.lambda_cos * (cos)
+            # batch_loss = self.lambda_mse * (mse) + self.lambda_cos * (cos)
             batch_losses.append(batch_loss)
             loss += batch_loss
 
