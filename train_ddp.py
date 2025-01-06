@@ -62,7 +62,7 @@ def main(args):
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
     parser.add_argument('--epoch', default=500, help='Epoch for Train')
-    parser.add_argument('--batch_size', default=32, help='Batch Size for Train')
+    parser.add_argument('--batch_size', default=16, help='Batch Size for Train')
     # parser.add_argument('--data_path', default='/DATA1/temp/data_all.yaml', help='Data for train')
     parser.add_argument('--data_path', default='/DATA/DATASETS/temp/data_all.yaml', help='Data for train')
     # parser.add_argument('--data_path', default='/DATA/DATASETS/temp/data_tiny_balanced.yaml', help='Data for train')
