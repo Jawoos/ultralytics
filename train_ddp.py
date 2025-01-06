@@ -26,7 +26,8 @@ def main(args):
     # local_rank = setup_distributed()
 
     # Initialize model
-    model = XiiYOLO("yolo11x.pt")
+    # model = XiiYOLO("yolo11x.pt")
+    model = XiiYOLO("/DATA_17/pjw/workspace/ultralytics/runs/detect/train55/weights/last.pt")
 
     # Train the model
     # train_results = model.train(
@@ -48,7 +49,8 @@ def main(args):
         device=[1,2,3],  # device to run on, i.e. device=0 or device=0,1,2,3 or device=cpu
         save_period=5,
         batch=args.batch_size,
-        project = "./runs/detect/"
+        project = "./runs/detect/",
+        resume = True
     )
 
     # Evaluate model performance on the validation set
