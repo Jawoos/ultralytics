@@ -175,3 +175,5 @@ calibration_*.npy
 # personal
 dog.jpg
 exp*
+runs/
+run/
