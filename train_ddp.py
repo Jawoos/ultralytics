@@ -1,13 +1,13 @@
 import argparse
 import os
 import warnings
-from ultralytics import YOLO
+# from ultralytics import YOLO
 from ultralytics.xiilab.model import XiiYOLO
 import torch.distributed as dist
 import torch
 os.environ["MASTER_ADDR"] = "localhost"
 os.environ["MASTER_PORT"] = "42017"
-os.environ["WORLD_SIZE"] = "3"
+os.environ["WORLD_SIZE"] = "2"
 os.environ["RANK"] = "0"
 
 # def setup_distributed():
@@ -33,7 +33,7 @@ def main(args):
         data=args.data_path,  # path to dataset YAML
         epochs=int(args.epoch),  # number of training epochs
         imgsz=640,  # training image size
-        device=[0,1,2],  # specific GPU assigned to the process
+        device=[0,1,2,3],  # specific GPU assigned to the process
         save_period=5,
         batch=args.batch_size
     )
@@ -46,9 +46,11 @@ def main(args):
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--epoch', default=300, help='Epoch for Train')
-    parser.add_argument('--batch_size', default=12, help='Batch Size for Train')
-    parser.add_argument('--data_path', default='/DATA1/temp/data_all.yaml', help='Data for train')
+    parser.add_argument('--epoch', default=500, help='Epoch for Train')
+    parser.add_argument('--batch_size', default=16, help='Batch Size for Train')
+    # parser.add_argument('--data_path', default='/DATA1/temp/data_all.yaml', help='Data for train')
+    parser.add_argument('--data_path', default='/DATA/DATASETS/temp/data_all.yaml', help='Data for train')
+    # parser.add_argument('--data_path', default='/DATA/DATASETS/temp/data_tiny_balanced.yaml', help='Data for train')
     args = parser.parse_args()
 
     main(args)
