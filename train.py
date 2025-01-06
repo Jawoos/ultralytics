@@ -26,8 +26,8 @@ warnings.filterwarnings("ignore")
 
 def main(args):
     # Load a model
-    model = YOLO("yolo11x.pt")
-    # model = XiiYOLO("yolo11x.pt")
+    # model = YOLO("yolo11x.pt")
+    model = XiiYOLO("yolo11x.pt")
 
     # Train the model
     train_results = model.train(
@@ -39,7 +39,8 @@ def main(args):
         device=args.gpu_num,  # device to run on, i.e. device=0 or device=0,1,2,3 or device=cpu
         # device=[0, 1],  # device to run on, i.e. device=0 or device=0,1,2,3 or device=cpu
         save_period=5,
-        batch=args.batch_size
+        batch=args.batch_size,
+        project = "./runs/detect/"
     )
 
     # model = XiiYOLO("/DATA_17/pjw/workspace/ultralytics/runs/detect/train/weights/best.pt")
