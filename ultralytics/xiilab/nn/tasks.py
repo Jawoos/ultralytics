@@ -305,12 +305,12 @@ class BaseModel(nn.Module):
             self.mask_loss = self.criterion(mask_preds, batch)
 
             self.do_feat_loss = True
+            feat_loss = self.feat_criterion(feature_ori, feature_mask)
+            # if self.do_feat_loss:
+            #     feat_loss = self.feat_criterion(feature_ori, feature_mask)
 
-            if self.do_feat_loss:
-                feat_loss = self.feat_criterion(feature_ori, feature_mask)
-
-                _, feature_reverse = self.forward(batch["img"]*(1-masked_image), xii=False)
-                reverse_feat_loss = self.feat_criterion.reverse_forward(feature_ori, feature_reverse)
+            #     _, feature_reverse = self.forward(batch["img"]*(1-masked_image), xii=False)
+            #     reverse_feat_loss = self.feat_criterion.reverse_forward(feature_ori, feature_reverse)
 
                 # print(f"feat_loss : {feat_loss}")
                 # 최종 손실 (스칼라 손실과 텐서 손실을 가중치로 합산)
@@ -318,10 +318,10 @@ class BaseModel(nn.Module):
                 # return (self.ori_loss[0] + self.mask_loss[0] + (feat_loss[0] + reverse_feat_loss[0]), self.ori_loss[1] + self.mask_loss[1] + (feat_loss[1] + reverse_feat_loss[1]))
                 # return (self.ori_loss[0] + self.mask_loss[0] + feat_loss[0] * 0.3 + reverse_feat_loss[0] * 0.25, \
                 #          self.ori_loss[1] + self.mask_loss[1])
-                return (self.ori_loss[0] + self.mask_loss[0] - feat_loss[0] * 0.3 - reverse_feat_loss[0] * 0.25, \
-                         self.ori_loss[1] + self.mask_loss[1])
-            else:
-                return (self.ori_loss[0] + self.mask_loss[0], self.ori_loss[1] + self.mask_loss[1])
+            #     return (self.ori_loss[0] + self.mask_loss[0] - feat_loss[0] * 0.3 - reverse_feat_loss[0] * 0.25, \
+            #              self.ori_loss[1] + self.mask_loss[1])
+            # else:
+            return (self.ori_loss[0] + self.mask_loss[0], self.ori_loss[1] + self.mask_loss[1])
         else:
             # original code
             return self.criterion(preds, batch)

@@ -1,64 +1,55 @@
 import argparse
-
-import numpy as np
-
 import os
-# os.environ["MKL_THREADING_LAYER"] = "GNU"
-
-# os.environ["MASTER_ADDR"] = "localhost"
-# os.environ["MASTER_PORT"] = "42017"
-# os.environ["WORLD_SIZE"] = "4"
-# os.environ["RANK"] = "0"
-
-import time
-
-from ultralytics import YOLO
-from ultralytics.engine.model import Model
-from ultralytics.nn.tasks import attempt_load_one_weight, guess_model_task, nn, yaml_model_load
-from ultralytics.xiilab.model import XiiYOLO
-
-
 import warnings
+from ultralytics import YOLO
+from ultralytics.xiilab.model import XiiYOLO
+import torch.distributed as dist
+import torch
+os.environ["MASTER_ADDR"] = "localhost"
+os.environ["MASTER_PORT"] = "42017"
+os.environ["WORLD_SIZE"] = "2"
+os.environ["RANK"] = "0"
 
-# 특정 경고 메시지 무시
-warnings.filterwarnings("ignore", message="Corrupt JPEG data")
-warnings.filterwarnings("ignore")
+# def setup_distributed():
+#     """Set up distributed training."""
+#     dist.init_process_group(backend="nccl", init_method="env://")
+#     local_rank = int(os.environ["LOCAL_RANK"])
+#     torch.cuda.set_device(local_rank)
+#     return local_rank
+
+# def cleanup_distributed():
+#     """Clean up distributed training."""
+#     dist.destroy_process_group()
 
 def main(args):
-    # Load a model
-    # model = YOLO("yolo11x.pt")
-    model = XiiYOLO("yolo11x.pt")
+    # Set up distributed training
+    # local_rank = setup_distributed()
+
+    # Initialize model
+    model = XiiYOLO("/DATA/jhlee_temp/pjw/ultralytics/runs/detect/train6/weights/last.pt")
 
     # Train the model
     train_results = model.train(
-        # data="coco8.yaml",  # path to dataset YAML
-        # data="/workspace/data_path/DATASET/Competition_Dataset/CytologIA/yolo/data.yaml",
-        data=args.data_path,
+        data=args.data_path,  # path to dataset YAML
         epochs=int(args.epoch),  # number of training epochs
         imgsz=640,  # training image size
-        device=args.gpu_num,  # device to run on, i.e. device=0 or device=0,1,2,3 or device=cpu
-        # device=[0, 1],  # device to run on, i.e. device=0 or device=0,1,2,3 or device=cpu
+        device=[2,3],  # specific GPU assigned to the process
         save_period=5,
-        batch=args.batch_size
+        batch=args.batch_size,
+        resume=True,
     )
-
-    # model = XiiYOLO("/DATA_17/pjw/workspace/ultralytics/runs/detect/train/weights/best.pt")
 
     # Evaluate model performance on the validation set
     metrics = model.val()
 
-    # Export the model to ONNX format
-    # path = model.export(format="onnx")  # return path to exported model
-
+    # Clean up distributed training
+    # cleanup_distributed()
 
 if __name__ == '__main__':
     parser = argparse.ArgumentParser()
-    parser.add_argument('--epoch', default=100, help='Epoch for Train')
-    parser.add_argument('--gpu_num', default='2', type=str, nargs='+', help='0 1 ...')  # 공백으로 리스트 구현
-    parser.add_argument('--batch_size', default=4, help='Batch Size for Train')
-    # parser.add_argument('--data_path', default='coco8.yaml', help='Data for train')
-    # parser.add_argument('--data_path', default='/DATA1/temp/data_tiny_balanced.yaml', help='Data for train')
-    parser.add_argument('--data_path', default='/DATA/DATASETS/temp/data_tiny_balanced.yaml', help='Data for train')
+    parser.add_argument('--epoch', default=300, help='Epoch for Train')
+    parser.add_argument('--batch_size', default=16, help='Batch Size for Train')
+    parser.add_argument('--data_path', default='/DATA1/temp/data_all.yaml', help='Data for train')
     args = parser.parse_args()
 
     main(args)
