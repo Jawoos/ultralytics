@@ -390,6 +390,10 @@ class BaseTrainer:
                 # Backward
                 self.scaler.scale(self.loss).backward()
 
+
+                # 그래디언트 클래핑을 통한 loss nan값 문제 해결
+                # torch.nn.utils.clip_grad_norm_(self.model.parameters(), max_norm=1.0)  # 그라디언트 클리핑
+
                 # Optimize - https://pytorch.org/docs/master/notes/amp_examples.html
                 if ni - last_opt_step >= self.accumulate:
                     self.optimizer_step()
