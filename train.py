@@ -27,8 +27,8 @@ warnings.filterwarnings("ignore")
 def main(args):
     # Load a model
     # model = YOLO("yolo11x.pt")
-    # model = XiiYOLO("yolo11x.pt")
-    model = XiiYOLO("/DATA_17/pjw/workspace/ultralytics/runs/detect/train45/weights/last.pt")
+    model = XiiYOLO("yolo11x.pt")
+    # model = XiiYOLO("/DATA_17/pjw/workspace/ultralytics/runs/detect/train45/weights/last.pt")
 
     # Train the model
     train_results = model.train(
@@ -42,7 +42,7 @@ def main(args):
         save_period=5,
         batch=args.batch_size,
         project = "./runs/detect/",
-        resume = True
+        # resume = True
     )
 
     # model = XiiYOLO("/DATA_17/pjw/workspace/ultralytics/runs/detect/train/weights/best.pt")
@@ -61,9 +61,9 @@ if __name__ == '__main__':
     parser.add_argument('--batch_size', default=4, help='Batch Size for Train')
     # parser.add_argument('--data_path', default='coco8.yaml', help='Data for train')
     # parser.add_argument('--data_path', default='/DATA1/temp/data_tiny_balanced.yaml', help='Data for train')
-    # parser.add_argument('--data_path', default='/DATA/DATASETS/temp/data_tiny_balanced.yaml', help='Data for train')
+    parser.add_argument('--data_path', default='/DATA/DATASETS/temp/data_tiny_balanced.yaml', help='Data for train')
 
-    parser.add_argument('--data_path', default='/DATA/DATASETS/temp/data_all.yaml', help='Data for train')
+    # parser.add_argument('--data_path', default='/DATA/DATASETS/temp/data_all.yaml', help='Data for train')
 
     args = parser.parse_args()
 
