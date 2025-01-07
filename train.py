@@ -28,7 +28,7 @@ def main(args):
     # Load a model
     # model = YOLO("yolo11x.pt")
     model = XiiYOLO("yolo11x.pt")
-    # model = XiiYOLO("/DATA_17/pjw/workspace/ultralytics/runs/detect/train55/weights/last.pt")
+
 
     # Train the model
     train_results = model.train(
@@ -44,8 +44,6 @@ def main(args):
         project = "./runs/detect/",
         # resume = True
     )
-
-    # model = XiiYOLO("/DATA_17/pjw/workspace/ultralytics/runs/detect/train/weights/best.pt")
 
     # Evaluate model performance on the validation set
     metrics = model.val()

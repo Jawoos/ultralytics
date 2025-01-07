@@ -283,6 +283,7 @@ class BaseTrainer:
 
         # Dataloaders
         batch_size = self.batch_size // max(world_size, 1)
+<<<<<<< HEAD
 
         self.train_loader = self.get_dataloader(self.trainset, batch_size=batch_size, rank=LOCAL_RANK, mode="train")
         if RANK in {-1, 0}:
@@ -295,6 +296,14 @@ class BaseTrainer:
                 self.test_loader = self.get_dataloader(
                     self.testset, batch_size=batch_size if self.args.task == "obb" else batch_size * 2, rank=-1, mode="val"
                 )
+=======
+        self.train_loader = self.get_dataloader(self.trainset, batch_size=batch_size, rank=LOCAL_RANK, mode="train")
+        if RANK in {-1, 0}:
+            # Note: When training DOTA dataset, double batch size could get OOM on images with >2000 objects.
+            self.test_loader = self.get_dataloader(
+                self.testset, batch_size=batch_size if self.args.task == "obb" else batch_size * 2, rank=-1, mode="val"
+            )
+>>>>>>> 1bc93a205c9903252faffa8f4252724a62bcc5ce
             self.validator = self.get_validator()
             metric_keys = self.validator.metrics.keys + self.label_loss_items(prefix="val")
             self.metrics = dict(zip(metric_keys, [0] * len(metric_keys)))
