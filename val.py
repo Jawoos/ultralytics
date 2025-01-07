@@ -8,14 +8,9 @@ from ultralytics.xiilab.model import XiiYOLO
 
 def main(args):
     # Load a model
-<<<<<<< HEAD
     
     model = YOLO(args.model_path)
     # model = XiiYOLO(args.model_path)
-=======
-
-    model = XiiYOLO(args.model_path)
->>>>>>> 1bc93a205c9903252faffa8f4252724a62bcc5ce
 
     # Evaluate model performance on the validation set
     metrics = model.val(
@@ -33,11 +28,7 @@ if __name__ == '__main__':
 
     # parser.add_argument('--data_path', default='/DATA/DATASETS/temp/data_all.yaml', help='Data for train') ## 6번 서버
 
-<<<<<<< HEAD
     parser.add_argument('--model_path', default="/DATA_17/pjw/workspace/ultralytics/runs/detect/train45/weights/best.pt", help='Data for train')
-=======
-    parser.add_argument('--model_path', default="/DATA_17/pjw/workspace/ultralytics/runs/detect/train51/weights/best.pt", help='Data for train')
->>>>>>> 1bc93a205c9903252faffa8f4252724a62bcc5ce
     # parser.add_argument('--model_path', default="/DATA_17/pjw/workspace/ultralytics/runs/detect/train27/weights/epoch40.pt", help='Data for train')
     args = parser.parse_args()
 
